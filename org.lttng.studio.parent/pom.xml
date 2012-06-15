@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+  xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.lttng.studio</groupId>
+  <artifactId>org.lttng.studio.parent</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <packaging>pom</packaging>
+
+  <!-- tycho requires maven >= 3.0 -->
+  <prerequisites>
+    <maven>3.0</maven>
+  </prerequisites>
+<!--
+  <modules>
+    <module>../org.lttng.studio</module>
+    <module>../org.lttng.studio.tests</module>
+  </modules>
+-->
+  <properties>
+    <tycho-version>0.14.1</tycho-version>
+  </properties>
+  <repositories>
+    <!-- configure p2 repository to resolve against -->
+    <repository>
+      <id>indigo</id>
+      <layout>p2</layout>
+      <url>http://download.eclipse.org/releases/indigo</url>
+            <!-- file URL for faster and offline builds -->
+      <!-- <url>file:/${basedir}/../../helios-rcp/</url> -->
+    </repository>
+    <!-- use latest linuxtools update site -->
+    <!-- 
+    <repository>
+      <id>linuxtools</id>
+      <layout>p2</layout>
+      <url>http://download.eclipse.org/technology/linuxtools/updates-nightly</url>
+    </repository>
+     -->
+    <!-- use custom ctf-p2 repository while linuxtools repository has issues -->
+    <repository>
+      <id>ctf-p2</id>
+      <layout>p2</layout>
+      <url>http://secretaire.dorsal.polymtl.ca/~fgiraldeau/ctf-p2/</url>
+    </repository>
+  </repositories>
+  <build>
+    <plugins>
+      <plugin>
+        <!-- enable tycho build extension -->
+        <groupId>org.eclipse.tycho</groupId>
+        <artifactId>tycho-maven-plugin</artifactId>
+        <version>${tycho-version}</version>
+        <extensions>true</extensions>
+      </plugin>
+      <plugin>
+        <groupId>org.eclipse.tycho</groupId>
+        <artifactId>target-platform-configuration</artifactId>
+        <version>${tycho-version}</version>
+        <configuration>
+          <!-- configure the p2 target environments for multi-platform build -->
+          <environments>
+            <environment>
+              <os>linux</os>
+              <ws>gtk</ws>
+              <arch>x86_64</arch>
+            </environment>
+            <environment>
+              <os>win32</os>
+              <ws>win32</ws>
+              <arch>x86_64</arch>
+            </environment>
+          </environments>
+        </configuration>
+      </plugin>
+      <!-- enable source bundle generation -->
+      <plugin>
+        <groupId>org.eclipse.tycho</groupId>
+        <artifactId>tycho-source-plugin</artifactId>
+        <version>${tycho-version}</version>
+        <executions>
+          <execution>
+            <id>plugin-source</id>
+            <goals>
+              <goal>plugin-source</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
