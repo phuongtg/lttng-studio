@@ -12,12 +12,12 @@
   <prerequisites>
     <maven>3.0</maven>
   </prerequisites>
-<!--
   <modules>
     <module>../org.lttng.studio</module>
     <module>../org.lttng.studio.tests</module>
+    <module>../org.lttng.studio.feature</module>
+    <module>../org.lttng.studio.repository</module>
   </modules>
--->
   <properties>
     <tycho-version>0.14.1</tycho-version>
   </properties>
@@ -31,18 +31,10 @@
       <!-- <url>file:/${basedir}/../../helios-rcp/</url> -->
     </repository>
     <!-- use latest linuxtools update site -->
-    <!-- 
     <repository>
       <id>linuxtools</id>
       <layout>p2</layout>
       <url>http://download.eclipse.org/technology/linuxtools/updates-nightly</url>
-    </repository>
-     -->
-    <!-- use custom ctf-p2 repository while linuxtools repository has issues -->
-    <repository>
-      <id>ctf-p2</id>
-      <layout>p2</layout>
-      <url>http://secretaire.dorsal.polymtl.ca/~fgiraldeau/ctf-p2/</url>
     </repository>
   </repositories>
   <build>

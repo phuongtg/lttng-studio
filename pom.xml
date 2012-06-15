@@ -9,9 +9,6 @@
   <packaging>pom</packaging>
 
   <modules>
-    <module>org.lttng.studio</module>
-    <module>org.lttng.studio.tests</module>
-    <!-- <module>org.lttng.studio.repository</module> -->
     <module>org.lttng.studio.parent</module>
   </modules>
 
