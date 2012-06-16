@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <?pde version="3.6"?>
 
-<target name="LTTng Studio target platform" sequenceNumber="46">
+<target name="Running Platform" sequenceNumber="19">
 <locations>
+<location path="${workspace_loc}/target/delta.pack/eclipse" type="Directory"/>
 <location includeAllPlatforms="false" includeMode="slicer" includeSource="true" type="InstallableUnit">
 <unit id="org.eclipse.linuxtools.ctf.feature.group" version="1.0.0.201206120405"/>
 <repository location="http://download.eclipse.org/technology/linuxtools/updates-nightly"/>
@@ -12,12 +13,10 @@
 <repository location="http://download.eclipse.org/tools/orbit/downloads/drops/R20120119162704/repository"/>
 </location>
 <location includeAllPlatforms="false" includeMode="slicer" includeSource="true" type="InstallableUnit">
-<unit id="org.eclipse.jdt.feature.group" version="3.8.0.v20120525-1249-8-8nFqlFNOfwKDRF3dXMdHyBC834"/>
-<unit id="org.eclipse.rcp.feature.group" version="4.2.0.v20120528-1648-7IAPA7BrHQicRoQXOz0Obz-blRCA"/>
-<unit id="org.eclipse.rcp.source.feature.group" version="4.2.0.v20120528-1648-7IAPA7BrHQicRoQXOz0Obz-blRCA"/>
-<unit id="org.eclipse.rcp.sdk.id" version="4.2.0.I20120531-1500"/>
-<repository location="http://download.eclipse.org/releases/juno/"/>
+<unit id="org.junit" version="4.8.2.v4_8_2_v20110321-1705"/>
+<repository location="http://download.eclipse.org/tools/orbit/downloads/drops/R20120119162704/repository"/>
 </location>
+<location path="${eclipse_home}" type="Profile"/>
 </locations>
 <environment>
 <os>linux</os>

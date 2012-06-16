@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site>
+   <feature url="features/org.lttng.studio.feature_0.0.1.qualifier.jar" id="org.lttng.studio.feature" version="0.0.1.qualifier">
+      <category name="org.lttng.studio"/>
+   </feature>
+   <category-def name="org.lttng.studio" label="LTTng Studio"/>
+</site>
