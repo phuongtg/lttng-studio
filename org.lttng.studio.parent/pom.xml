@@ -13,7 +13,7 @@
     <maven>3.0</maven>
   </prerequisites>
   <modules>
-    <module>../org.lttng.studio</module>
+    <module>../org.lttng.studio.bundle</module>
     <module>../org.lttng.studio.tests</module>
     <module>../org.lttng.studio.feature</module>
     <module>../org.lttng.studio.repository</module>
@@ -24,9 +24,9 @@
   <repositories>
     <!-- configure p2 repository to resolve against -->
     <repository>
-      <id>indigo</id>
+      <id>juno</id>
       <layout>p2</layout>
-      <url>http://download.eclipse.org/releases/indigo</url>
+      <url>http://download.eclipse.org/releases/juno</url>
             <!-- file URL for faster and offline builds -->
       <!-- <url>file:/${basedir}/../../helios-rcp/</url> -->
     </repository>
