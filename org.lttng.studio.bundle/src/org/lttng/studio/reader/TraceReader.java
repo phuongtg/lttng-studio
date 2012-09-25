@@ -109,7 +109,7 @@ public class TraceReader {
 		for(ITraceEventHandler handler: handlers.values()) {
 			handler.handleInit(this, reader.getTrace());
 		}
-		
+		buildHookCache();
 		reader.seek(0);	
 		while((event=reader.getCurrentEventDef()) != null && cancel != true) {
 			timeKeeper.setCurrentTime(event.getTimestamp());
@@ -134,14 +134,16 @@ public class TraceReader {
 		for (Long id: streamIds) {
 			HashMap<Long, EventDeclaration> decl = trace.getEvents(id);
 			for (Long evId: decl.keySet()) {
-				if (!eventHookMap.containsKey(decl.get(evId).getName()))
+				String eventName = decl.get(evId).getName();
+				Set<TraceHook> hooks = eventHookMap.get(eventName); 
+				if (hooks == null)
 						continue;
 				TreeSet<TraceHook> set = eventHookMapCache.get(evId);
 				if (set == null) {
 					set = new TreeSet<TraceHook>();
 					eventHookMapCache.put(evId, set);
 				}
-				set.addAll(eventHookMap.get(decl.get(evId)));
+				set.addAll(hooks);
 			}
 		}
 	}
