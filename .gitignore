@@ -1,9 +1,9 @@
 *.class
 org.lttng.studio.tests/target/
-org.lttng.studio/target/
+org.lttng.studio.bundle/target/
 org.lttng.studio.feature/target/
 org.lttng.studio.repository/index.html
 org.lttng.studio.repository/target/
 org.lttng.studio.repository/web/
 org.lttng.studio.tests/traces/
-
+org.lttng.studio.tests/traceset/
