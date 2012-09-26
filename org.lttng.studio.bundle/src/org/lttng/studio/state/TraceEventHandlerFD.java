@@ -18,11 +18,13 @@ import org.lttng.studio.reader.TraceReader;
 public class TraceEventHandlerFD extends TraceEventHandlerBase {
 
 	/* Keep tmp info until corresponding sys_exit */
-	public enum EventType { SYS_CLOSE, SYS_OPEN }
+	public enum EventType { SYS_CLOSE, SYS_OPEN, SYS_DUP2 }
 	public class EventData {
 		public EventType type;
 		public String name;
 		public long fd;
+		public long oldfd;
+		public long newfd;
 	}
 
 	SystemModel system;
@@ -33,7 +35,8 @@ public class TraceEventHandlerFD extends TraceEventHandlerBase {
 		super();
 		hooks.add(new TraceHook("sys_open"));
 		hooks.add(new TraceHook("sys_close"));
-		hooks.add(new TraceHook("sys_exit"));
+		hooks.add(new TraceHook("sys_dup2"));
+		hooks.add(new TraceHook("exit_syscall"));
 	}
 
 	@Override
@@ -56,7 +59,7 @@ public class TraceEventHandlerFD extends TraceEventHandlerBase {
 		EventData ev = new EventData();
 		ev.name = ((StringDefinition) def.get("_filename")).toString();
 		ev.type = EventType.SYS_OPEN;
-		evHistory.put(task.getPid(), ev);
+		evHistory.put(task.getTid(), ev);
 	}
 
 	public void handle_sys_close(TraceReader reader, EventDefinition event) {
@@ -69,10 +72,24 @@ public class TraceEventHandlerFD extends TraceEventHandlerBase {
 		EventData ev = new EventData();
 		ev.fd = ((IntegerDefinition) def.get("_fd")).getValue();
 		ev.type = EventType.SYS_CLOSE;
-		evHistory.put(task.getPid(), ev);
+		evHistory.put(task.getTid(), ev);
 	}
 
-	public void handle_sys_exit(TraceReader reader, EventDefinition event) {
+	public void handle_sys_dup2(TraceReader reader, EventDefinition event) {
+		HashMap<String, Definition> def = event.getFields().getDefinitions();
+		int cpu = event.getCPU();
+		system.getTaskCpu(cpu);
+		Task task = system.getTaskCpu(cpu);
+		if (task == null)
+			return;
+		EventData ev = new EventData();
+		ev.oldfd = ((IntegerDefinition) def.get("_oldfd")).getValue();
+		ev.newfd = ((IntegerDefinition) def.get("_newfd")).getValue();
+		ev.type = EventType.SYS_DUP2;
+		evHistory.put(task.getTid(), ev);
+	}
+
+	public void handle_exit_syscall(TraceReader reader, EventDefinition event) {
 		HashMap<String, Definition> def = event.getFields().getDefinitions();
 		int cpu = event.getCPU();
 		system.getTaskCpu(cpu);
@@ -80,20 +97,32 @@ public class TraceEventHandlerFD extends TraceEventHandlerBase {
 		if (task == null)
 			return;
 		long ret = ((IntegerDefinition)def.get("_ret")).getValue();
-		EventData ev = evHistory.remove(task.getPid());
+		EventData ev = evHistory.remove(task.getTid());
 		if (ev == null)
 			return;
 		switch (ev.type) {
 		case SYS_CLOSE:
 			if (ret == 0) {
 				system.removeFD(task.getPid(), ev.fd);
-				System.out.println(String.format("removeFD %d %d", task.getPid(), ev.fd));
 			}
 			break;
 		case SYS_OPEN:
 			if (ret >= 0) {
 				system.addFD(task.getPid(), new FD(ret, ev.name));
-				System.out.println(String.format("addFD    %d %d", task.getPid(), ret));
+			}
+			break;
+		case SYS_DUP2:
+			if (ret >= 0) {
+				assert(ret == ev.newfd);
+				// dup2 does nothing if oldfd == newfd
+				if (ev.oldfd == ev.newfd)
+					break;
+				// Copy oldfd, assign newfd
+				FD oldfd = system.getFD(task.getPid(), ev.oldfd);
+				String name = (oldfd != null) ? oldfd.getName() : null;
+				FD newfd = new FD(ev.newfd, name);
+				system.removeFD(task.getPid(), ev.oldfd);
+				system.addFD(task.getPid(), newfd);
 			}
 			break;
 		default:
