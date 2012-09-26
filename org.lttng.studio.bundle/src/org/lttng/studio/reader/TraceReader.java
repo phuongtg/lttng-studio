@@ -2,11 +2,13 @@ package org.lttng.studio.reader;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.Vector;
 
 import org.eclipse.linuxtools.ctf.core.event.EventDeclaration;
 import org.eclipse.linuxtools.ctf.core.event.EventDefinition;
@@ -17,7 +19,7 @@ import org.eclipse.linuxtools.ctf.core.trace.CTFTraceReader;
 public class TraceReader {
 
 	protected String tracePath;
-	protected CTFTraceReader reader;
+	private CTFTraceReader reader;
 	private final Map<Class<?>, ITraceEventHandler> handlers;
 	private final Map<String, TreeSet<TraceHook>> eventHookMap;
 	private final Map<Long, TreeSet<TraceHook>> eventHookMapCache;
@@ -25,6 +27,7 @@ public class TraceReader {
 	private static Class<?>[] argTypes = new Class<?>[] { TraceReader.class, EventDefinition.class };
 	private final TimeKeeper timeKeeper;
 	private boolean cancel;
+	private int nbCpus;
 
 	public TraceReader(String trace_path) {
 		this.tracePath = trace_path;
@@ -40,12 +43,7 @@ public class TraceReader {
 	}
 
 	public void loadTrace() throws CTFReaderException {
-		/* FIXME: missing close to CTFTraceReader
-	    if (reader != null) {
-	        reader.close();
-	    }
-	    */
-		reader = new CTFTraceReader(new CTFTrace(tracePath));
+		setReader(new CTFTraceReader(new CTFTrace(tracePath)));
 	}
 
 	public void registerHook(ITraceEventHandler handler, TraceHook hook) {
@@ -107,29 +105,27 @@ public class TraceReader {
 		cancel = false;
 
 		for(ITraceEventHandler handler: handlers.values()) {
-			handler.handleInit(this, reader.getTrace());
+			handler.handleInit(this, getReader().getTrace());
 		}
 		buildHookCache();
-		reader.seek(0);	
-		while((event=reader.getCurrentEventDef()) != null && cancel != true) {
+		getReader().seek(0);	
+		while((event=getReader().getCurrentEventDef()) != null && cancel != true) {
 			timeKeeper.setCurrentTime(event.getTimestamp());
 			eventId = event.getDeclaration().getId();
 			TreeSet<TraceHook> treeSet = eventHookMapCache.get(eventId);
 			if (treeSet != null)
 				runHookSet(treeSet, event);
 			runHookSet(catchAllHook, event);
-			reader.advance();
+			getReader().advance();
 		}
 
 		for(ITraceEventHandler handler: handlers.values()) {
 			handler.handleComplete(this);
 		}
-		// FIXME: close trace
-		//reader.close();
 	}
 
 	public void buildHookCache() {
-		CTFTrace trace = reader.getTrace();
+		CTFTrace trace = getReader().getTrace();
 		Set<Long> streamIds = trace.getStreams().keySet();
 		for (Long id: streamIds) {
 			HashMap<Long, EventDeclaration> decl = trace.getEvents(id);
@@ -172,11 +168,11 @@ public class TraceReader {
 	}
 
 	public Long getStartTime() {
-		return reader.getStartTime();
+		return getReader().getStartTime();
 	}
 
 	public Long getEndTime() {
-		return reader.getEndTime();
+		return getReader().getEndTime();
 	}
 
 	public void cancel() {
@@ -184,5 +180,31 @@ public class TraceReader {
 	}
 	public Boolean isCancel() {
 		return this.cancel;
+	}
+
+	public CTFTraceReader getReader() {
+		return reader;
+	}
+
+	public void setReader(CTFTraceReader reader) {
+		this.reader = reader;
+		Field field;
+		try {
+			field = reader.getClass().getDeclaredField("streamInputReaders");
+			field.setAccessible(true);
+			Vector v = (Vector) field.get(reader);
+			setNbCpus(v.size());
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new RuntimeException("Error trying to retreive the number of CPUs of the trace");
+		}
+	}
+
+	public int getNbCpus() {
+		return nbCpus;
+	}
+
+	public void setNbCpus(int nbCpus) {
+		this.nbCpus = nbCpus;
 	}
 }
