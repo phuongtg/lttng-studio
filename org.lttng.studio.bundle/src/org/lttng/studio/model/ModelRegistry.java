@@ -24,15 +24,11 @@ public class ModelRegistry {
 		return reg.get(context);
 	}
 
-	public void registerModel(Object context, Object model) {
-		getOrCreateContext(context).put(model.getClass(), model);
-	}
-
 	public Object getOrCreateModel(Object context, Class<?> klass) throws InstantiationException, IllegalAccessException {
 		HashMap<Class<?>, Object> map = getOrCreateContext(context);
 		if (!map.containsKey(klass)) {
 			Object inst = klass.newInstance();
-			registerModel(context, inst);
+			map.put(klass, inst);
 		}
 		return map.get(klass);
 	}

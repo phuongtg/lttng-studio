@@ -223,4 +223,10 @@ public class TraceReader {
 	public void setNbCpus(int nbCpus) {
 		this.nbCpus = nbCpus;
 	}
+
+	public void clearHandlers() {
+		this.handlers.clear();
+		this.eventHookMap.clear();
+		this.eventHookMapCache.clear();
+	}
 }

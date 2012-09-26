@@ -25,6 +25,13 @@ public class SystemModel implements ITraceModel {
 			tasks = new HashMap<Long, Task>();
 			fds = new HashMap<Long, HashMap<Long, FD>>();
 			current = new long[numCpus];
+			// Swapper task is always present
+			Task swapper = new Task();
+			swapper.setName("swapper");
+			swapper.setPid(0);
+			swapper.setTid(0);
+			swapper.setPpid(0);
+			tasks.put(0L, swapper);
 		}
 		isInitialized = true;
 	}
@@ -50,7 +57,8 @@ public class SystemModel implements ITraceModel {
 	}
 
 	public Task getTaskCpu(int cpu) {
-		return tasks.get(getCurrentTid(cpu));
+		long currentTid = getCurrentTid(cpu);
+		return tasks.get(currentTid);
 	}
 
 	public int getNumCpus() {
@@ -102,6 +110,13 @@ public class SystemModel implements ITraceModel {
 			set.addAll(fds.get(pid).values());
 		}
 		return set;
+	}
+
+	public void removeFD(long pid, long fd) {
+		if (fds.containsKey(pid)) {
+			HashMap<Long, FD> map = fds.get(pid);
+			map.remove(fd);
+		}
 	}
 
 }

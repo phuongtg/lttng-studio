@@ -74,7 +74,6 @@ public class StatedumpEventHandler extends TraceEventHandlerBase {
 		ArrayDefinition name = (ArrayDefinition) def.get("_name");
 
 		Task task = new Task(tid.getValue());
-		task.setStart(event.getTimestamp());
 		task.setPid(pid.getValue());
 		task.setPpid(ppid.getValue());
 		task.setExecution_mode(mode.getValue());
