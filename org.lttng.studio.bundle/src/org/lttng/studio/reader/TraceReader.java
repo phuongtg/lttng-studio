@@ -28,6 +28,7 @@ public class TraceReader {
 	private final TimeKeeper timeKeeper;
 	private boolean cancel;
 	private int nbCpus;
+	private Exception exception;
 
 	public TraceReader(String trace_path) {
 		this.tracePath = trace_path;
@@ -98,18 +99,24 @@ public class TraceReader {
 		handlers.put(handler.getClass(), handler);
 	}
 
-	public void process() throws CTFReaderException {
+	public void process() throws Exception {
 		loadTrace();
 		EventDefinition event;
 		Long eventId;
 		cancel = false;
 
 		for(ITraceEventHandler handler: handlers.values()) {
+			if (cancel == true)
+				break;
 			handler.handleInit(this, getReader().getTrace());
 		}
+		// Re-throw any handler exception
+		if (exception != null)
+			throw exception;
+
 		buildHookCache();
-		getReader().seek(0);	
-		while((event=getReader().getCurrentEventDef()) != null && cancel != true) {
+		getReader().seek(0);
+		while((event=getReader().getCurrentEventDef()) != null && cancel == false) {
 			timeKeeper.setCurrentTime(event.getTimestamp());
 			eventId = event.getDeclaration().getId();
 			TreeSet<TraceHook> treeSet = eventHookMapCache.get(eventId);
@@ -118,6 +125,10 @@ public class TraceReader {
 			runHookSet(catchAllHook, event);
 			getReader().advance();
 		}
+
+		// Re-throw any handler exception
+		if (exception != null)
+			throw exception;
 
 		for(ITraceEventHandler handler: handlers.values()) {
 			handler.handleComplete(this);
@@ -131,7 +142,7 @@ public class TraceReader {
 			HashMap<Long, EventDeclaration> decl = trace.getEvents(id);
 			for (Long evId: decl.keySet()) {
 				String eventName = decl.get(evId).getName();
-				Set<TraceHook> hooks = eventHookMap.get(eventName); 
+				Set<TraceHook> hooks = eventHookMap.get(eventName);
 				if (hooks == null)
 						continue;
 				TreeSet<TraceHook> set = eventHookMapCache.get(evId);
@@ -143,7 +154,7 @@ public class TraceReader {
 			}
 		}
 	}
-	
+
 	public void runHookSet(TreeSet<TraceHook> hooks, EventDefinition event) {
 		for (TraceHook h: hooks){
 			try {
@@ -159,7 +170,7 @@ public class TraceReader {
 				e.printStackTrace();
 				cancel = true;
 			}
-		}		
+		}
 	}
 
 	public ITraceEventHandler getHandler(
@@ -178,6 +189,11 @@ public class TraceReader {
 	public void cancel() {
 		this.cancel = true;
 	}
+	public void cancel(Exception e) {
+		this.cancel = true;
+		this.exception = e;
+	}
+
 	public Boolean isCancel() {
 		return this.cancel;
 	}
@@ -200,7 +216,7 @@ public class TraceReader {
 		}
 	}
 
-	public int getNbCpus() {
+	public int getNumCpus() {
 		return nbCpus;
 	}
 

@@ -1,43 +1,53 @@
 package org.lttng.studio.model;
 
+import java.util.Collection;
 import java.util.HashMap;
 
-public class SystemModel {
+public class SystemModel implements ITraceModel {
 
-	private HashMap<Long, Task> tasks;
-	private HashMap<Long, Integer> cpuTaskMap;
-	
+	private HashMap<Long, Task> tasks; // (tid, task)
+	private long[] current;			// (cpu, tid)
+	private int numCpus;
+
 	public SystemModel() {
-		reset();
 	}
 
-	public void reset() {
-		setTasks(new HashMap<Long, Task>());
-		setCpuTaskMap(new HashMap<Long, Integer>());
-	}
-	
-	public HashMap<Long, Task> getTasks() {
-		return tasks;
+	public void init(int numCpus) {
+		tasks = new HashMap<Long, Task>();
+		current = new long[numCpus];
 	}
 
-	public void setTasks(HashMap<Long, Task> tasks) {
-		this.tasks = tasks;
+	public Collection<Task> getTasks() {
+		return tasks.values();
 	}
 
-	public HashMap<Long, Integer> getCpuTaskMap() {
-		return cpuTaskMap;
+	public long getCurrentTid(int cpu) {
+		return current[cpu];
 	}
 
-	public void setCpuTaskMap(HashMap<Long, Integer> cpuTaskMap) {
-		this.cpuTaskMap = cpuTaskMap;
+	public void setCurrentTid(int cpu, long tid) {
+		current[cpu] = tid;
 	}
 
 	public void putTask(Task task) {
 		tasks.put(task.getTid(), task);
 	}
-	
+
 	public Task getTask(long tid) {
 		return tasks.get(tid);
 	}
 
+	public Task getTaskCpu(int cpu) {
+		return tasks.get(getCurrentTid(cpu));
+	}
+
+	public int getNumCpus() {
+		return numCpus;
+	}
+
+	@Override
+	public void reset() {
+		tasks = new HashMap<Long, Task>();
+		current = new long[numCpus];
+	}
 }

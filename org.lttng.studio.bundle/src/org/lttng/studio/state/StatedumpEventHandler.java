@@ -8,16 +8,21 @@ import org.eclipse.linuxtools.ctf.core.event.types.Definition;
 import org.eclipse.linuxtools.ctf.core.event.types.IntegerDefinition;
 import org.eclipse.linuxtools.ctf.core.event.types.StringDefinition;
 import org.eclipse.linuxtools.ctf.core.trace.CTFTrace;
+import org.lttng.studio.model.ModelRegistry;
 import org.lttng.studio.model.SystemModel;
 import org.lttng.studio.model.Task;
 import org.lttng.studio.reader.TraceEventHandlerBase;
 import org.lttng.studio.reader.TraceHook;
 import org.lttng.studio.reader.TraceReader;
 
+/*
+ * Populate initial state of the system with statedump
+ */
+
 public class StatedumpEventHandler extends TraceEventHandlerBase {
-	
+
 	private SystemModel system;
-	
+
 	public StatedumpEventHandler() {
 		super();
 		this.hooks.add(new TraceHook("lttng_statedump_start"));
@@ -25,33 +30,37 @@ public class StatedumpEventHandler extends TraceEventHandlerBase {
 		this.hooks.add(new TraceHook("lttng_statedump_file_descriptor"));
 		this.hooks.add(new TraceHook("lttng_statedump_process_state"));
 	}
-	
+
 	@Override
 	public void handleInit(TraceReader reader, CTFTrace trace) {
-		system = new SystemModel();
-	} 
+		try {
+			system = (SystemModel) ModelRegistry.getInstance().getOrCreateModel(reader, SystemModel.class);
+		} catch (Exception e) {
+			reader.cancel(e);
+		}
+	}
 
 	@Override
 	public void handleComplete(TraceReader reader) {
 	}
-	
+
 	public void handle_lttng_statedump_start(TraceReader reader, EventDefinition event) {
 	}
-	
+
 	public void handle_lttng_statedump_end(TraceReader reader, EventDefinition event) {
 		reader.cancel();
 	}
-	
+
 	public void handle_lttng_statedump_file_descriptor(TraceReader reader, EventDefinition event) {
 		HashMap<String, Definition> def = event.getFields().getDefinitions();
 		IntegerDefinition pid = (IntegerDefinition) def.get("_pid");
 		StringDefinition filename = (StringDefinition) def.get("_filename");
 		IntegerDefinition fd = (IntegerDefinition) def.get("_fd");
-		
+
 		//system.addFileDescriptor(pid.getValue(), fd.getValue(), filename.getValue());
 		//System.out.println(String.format("%d %s", pid.getValue(), filename.getValue()));
 	}
-	
+
 	public void handle_lttng_statedump_process_state(TraceReader reader, EventDefinition event) {
 		HashMap<String, Definition> def = event.getFields().getDefinitions();
 		IntegerDefinition pid = (IntegerDefinition) def.get("_pid");
@@ -62,7 +71,7 @@ public class StatedumpEventHandler extends TraceEventHandlerBase {
 		IntegerDefinition submode = (IntegerDefinition) def.get("_submode");
 		IntegerDefinition status = (IntegerDefinition) def.get("_status");
 		ArrayDefinition name = (ArrayDefinition) def.get("_name");
-		
+
 		Task task = new Task(tid.getValue());
 		system.putTask(task);
 		task.setStart(event.getTimestamp());
