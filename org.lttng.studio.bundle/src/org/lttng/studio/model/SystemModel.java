@@ -2,19 +2,31 @@ package org.lttng.studio.model;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
+
+import org.lttng.studio.reader.TraceReader;
 
 public class SystemModel implements ITraceModel {
 
 	private HashMap<Long, Task> tasks; // (tid, task)
+	private HashMap<Long, HashMap<Long, FD>> fds; // (pid, (id, fd))
 	private long[] current;			// (cpu, tid)
 	private int numCpus;
+	private boolean isInitialized = false;
 
 	public SystemModel() {
 	}
 
-	public void init(int numCpus) {
-		tasks = new HashMap<Long, Task>();
-		current = new long[numCpus];
+	@Override
+	public void init(TraceReader reader) {
+		if (isInitialized == false){
+			numCpus = reader.getNumCpus();
+			tasks = new HashMap<Long, Task>();
+			fds = new HashMap<Long, HashMap<Long, FD>>();
+			current = new long[numCpus];
+		}
+		isInitialized = true;
 	}
 
 	public Collection<Task> getTasks() {
@@ -47,7 +59,49 @@ public class SystemModel implements ITraceModel {
 
 	@Override
 	public void reset() {
-		tasks = new HashMap<Long, Task>();
-		current = new long[numCpus];
+		isInitialized = false;
 	}
+
+	public void addFD(long pid, FD fd) {
+		if (!fds.containsKey(pid)) {
+			fds.put(pid, new HashMap<Long, FD>());
+		}
+		fds.get(pid).put(fd.getNum(), fd);
+	}
+
+	public void removeFD(long pid, FD fd) {
+		if (fds.containsKey(pid)) {
+			HashMap<Long, FD> map = fds.get(pid);
+			map.remove(fd.getNum());
+		}
+	}
+
+	public FD getFD(long pid, long num) {
+		if (!fds.containsKey(pid))
+			return null;
+		return fds.get(pid).get(num);
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder str = new StringBuilder();
+		str.append("Tasks\n");
+		for (Task task: tasks.values()) {
+			str.append(String.format("%10d %10d %10d %s\n", task.getPid(), task.getTid(), task.getPpid(), task.getName()));
+			if (fds.containsKey(task.getPid())) {
+				for (FD fd: fds.get(task.getPid()).values())
+					str.append(String.format("\t%d %s\n", fd.getNum(), fd.getName()));
+			}
+		}
+		return str.toString();
+	}
+
+	public Set<FD> getFDs() {
+		HashSet<FD> set = new HashSet<FD>();
+		for (Long pid: fds.keySet()) {
+			set.addAll(fds.get(pid).values());
+		}
+		return set;
+	}
+
 }

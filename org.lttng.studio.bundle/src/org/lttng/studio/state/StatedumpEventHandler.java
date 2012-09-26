@@ -8,6 +8,7 @@ import org.eclipse.linuxtools.ctf.core.event.types.Definition;
 import org.eclipse.linuxtools.ctf.core.event.types.IntegerDefinition;
 import org.eclipse.linuxtools.ctf.core.event.types.StringDefinition;
 import org.eclipse.linuxtools.ctf.core.trace.CTFTrace;
+import org.lttng.studio.model.FD;
 import org.lttng.studio.model.ModelRegistry;
 import org.lttng.studio.model.SystemModel;
 import org.lttng.studio.model.Task;
@@ -38,6 +39,7 @@ public class StatedumpEventHandler extends TraceEventHandlerBase {
 		} catch (Exception e) {
 			reader.cancel(e);
 		}
+		system.init(reader);
 	}
 
 	@Override
@@ -57,8 +59,7 @@ public class StatedumpEventHandler extends TraceEventHandlerBase {
 		StringDefinition filename = (StringDefinition) def.get("_filename");
 		IntegerDefinition fd = (IntegerDefinition) def.get("_fd");
 
-		//system.addFileDescriptor(pid.getValue(), fd.getValue(), filename.getValue());
-		//System.out.println(String.format("%d %s", pid.getValue(), filename.getValue()));
+		system.addFD(pid.getValue(), new FD(fd.getValue(), filename.getValue()));
 	}
 
 	public void handle_lttng_statedump_process_state(TraceReader reader, EventDefinition event) {
@@ -73,7 +74,6 @@ public class StatedumpEventHandler extends TraceEventHandlerBase {
 		ArrayDefinition name = (ArrayDefinition) def.get("_name");
 
 		Task task = new Task(tid.getValue());
-		system.putTask(task);
 		task.setStart(event.getTimestamp());
 		task.setPid(pid.getValue());
 		task.setPpid(ppid.getValue());
@@ -82,13 +82,6 @@ public class StatedumpEventHandler extends TraceEventHandlerBase {
 		task.setProcess_status(status.getValue());
 		task.setThread_type(type.getValue());
 		task.setName(name.toString());
-	}
-
-	public SystemModel getSystem() {
-		return system;
-	}
-
-	public void setSystem(SystemModel system) {
-		this.system = system;
+		system.putTask(task);
 	}
 }

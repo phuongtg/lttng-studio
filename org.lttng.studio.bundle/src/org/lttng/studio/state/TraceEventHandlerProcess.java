@@ -27,13 +27,12 @@ public class TraceEventHandlerProcess extends TraceEventHandlerBase {
 
 	@Override
 	public void handleInit(TraceReader reader, CTFTrace trace) {
-		int nbCpus = reader.getNumCpus();
 		try {
 			system = (SystemModel) ModelRegistry.getInstance().getOrCreateModel(reader, SystemModel.class);
 		} catch (Exception e) {
 			reader.cancel(e);
 		}
-		system.init(nbCpus);
+		system.init(reader);
 	}
 
 	public void handle_sched_switch(TraceReader reader, EventDefinition event) {

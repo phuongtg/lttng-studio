@@ -25,7 +25,6 @@ public class TraceEventHandlerCounter extends TraceEventHandlerBase {
 		} catch (Exception e) {
 			reader.cancel(e);
 		}
-		System.out.println(trace.getStreams().size());
 	}
 
 	public void handle_all_event(TraceReader reader, EventDefinition event) {

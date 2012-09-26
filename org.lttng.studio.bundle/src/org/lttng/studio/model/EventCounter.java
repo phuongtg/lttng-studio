@@ -1,5 +1,7 @@
 package org.lttng.studio.model;
 
+import org.lttng.studio.reader.TraceReader;
+
 public class EventCounter implements ITraceModel {
 
 	private long counter;
@@ -23,6 +25,11 @@ public class EventCounter implements ITraceModel {
 	@Override
 	public void reset() {
 		counter = 0;
+	}
+
+	@Override
+	public void init(TraceReader reader) {
+		setCounter(0);
 	}
 
 }
