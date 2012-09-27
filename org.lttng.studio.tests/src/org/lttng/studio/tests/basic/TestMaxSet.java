@@ -1,51 +1,49 @@
 package org.lttng.studio.tests.basic;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
-import java.util.SortedSet;
+import java.util.Comparator;
+import java.util.Set;
 import java.util.TreeSet;
 
 import org.junit.Test;
 
+import com.google.common.collect.MinMaxPriorityQueue;
+import com.google.common.collect.MinMaxPriorityQueue.Builder;
+import com.google.common.collect.Sets;
+import com.google.common.collect.Sets.SetView;
+
 public class TestMaxSet {
 
-	public class MaxSet {
-		private final int size;
-		TreeSet<Long> set;
-
-		public MaxSet(int size) {
-			this.size = size;
-			this.set = new TreeSet<Long>();
-		}
-		public void add(long data) {
-			if (set.isEmpty()) {
-				set.add(data);
-			} else if (data > set.first()) {
-				set.add(data);
-				if (set.size() > size)
-					set.pollFirst();
-			}
-		}
-		public SortedSet<Long> getSet() {
-			return set;
-		}
-	}
-
 	@Test
-	public void testMax() {
+	public void testMaxHeap() {
 		int size = 10;
-		TreeSet<Long> exp = new TreeSet<Long>();
-		MaxSet set = new MaxSet(size);
+		Set<Long> exp = new TreeSet<Long>();
+		MinMaxPriorityQueue.maximumSize(size);
+		Builder<Long> builder2 = MinMaxPriorityQueue.orderedBy(new Comparator<Long>() {
+			@Override
+			public int compare(Long self, Long other) {
+				return other.compareTo(self);  // max heap
+				//return self.compareTo(other); // min heap
+			}
+		});
+		builder2.maximumSize(size);
+		MinMaxPriorityQueue<Long> heap = builder2.create();
+		
+		
 		for(long i = -100; i < 100; i++) {
-			set.add(i);
+			heap.add(i);
 		}
 		for (long i = 90; i < 100; i++) {
 			exp.add(i);
 		}
-		assertTrue(set.getSet().containsAll(exp));
-		assertTrue(exp.containsAll(set.getSet()));
-		assertEquals(size, set.getSet().size());
+		/*
+		System.out.println(exp);
+		System.out.println(set2);
+		*/
+		SetView<Long> diff = Sets.symmetricDifference(exp, new TreeSet<Long>(heap));
+		assertEquals(0, diff.size());
+		
 	}
 
 }

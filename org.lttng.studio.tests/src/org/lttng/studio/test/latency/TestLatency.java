@@ -1,5 +1,7 @@
 package org.lttng.studio.test.latency;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.File;
 
 import org.junit.Test;
@@ -27,10 +29,14 @@ public class TestLatency {
 
 		// Phase 2: update current state
 		TraceEventHandlerProcess h1 = new TraceEventHandlerProcess();
-		LatencyEventHandler h2 = new LatencyEventHandler();		
+		LatencyEventHandler h2 = new LatencyEventHandler();
+		h2.monitorEvent("heartbeat:msg");
 		reader.register(h1);
 		reader.register(h2);
 		reader.process();
+		assertEquals(2, h2.getStatsTable().size());
+		h2.printLatencyTable();
+		h2.printStatsTable();
 	}
 
 }
