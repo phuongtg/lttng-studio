@@ -1,16 +1,17 @@
 package org.lttng.studio.reader;
 
 import java.io.File;
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.Vector;
 
-import org.eclipse.linuxtools.ctf.core.event.EventDeclaration;
 import org.eclipse.linuxtools.ctf.core.event.EventDefinition;
 import org.eclipse.linuxtools.ctf.core.trace.CTFReaderException;
 import org.eclipse.linuxtools.ctf.core.trace.CTFTrace;
@@ -18,11 +19,9 @@ import org.eclipse.linuxtools.ctf.core.trace.CTFTraceReader;
 
 public class TraceReader {
 
-	protected String tracePath;
-	private CTFTraceReader reader;
+	private List<CTFTraceReader> readers;
 	private final Map<Class<?>, ITraceEventHandler> handlers;
 	private final Map<String, TreeSet<TraceHook>> eventHookMap;
-	private final Map<Long, TreeSet<TraceHook>> eventHookMapCache;
 	private final TreeSet<TraceHook> catchAllHook;
 	private static Class<?>[] argTypes = new Class<?>[] { TraceReader.class, EventDefinition.class };
 	private final TimeKeeper timeKeeper;
@@ -30,21 +29,17 @@ public class TraceReader {
 	private int nbCpus;
 	private Exception exception;
 
-	public TraceReader(String trace_path) {
-		this.tracePath = trace_path;
+	public TraceReader() {
 		handlers = new HashMap<Class<?>, ITraceEventHandler>();
 		eventHookMap = new HashMap<String, TreeSet<TraceHook>>();
-		eventHookMapCache = new HashMap<Long, TreeSet<TraceHook>>();
 		catchAllHook = new TreeSet<TraceHook>();
+		readers = new ArrayList<CTFTraceReader>();
 		timeKeeper = TimeKeeper.getInstance();
-	}
-
-	public TraceReader(File file) throws IOException {
-		this(file.getCanonicalPath());
+		
 	}
 
 	public void loadTrace() throws CTFReaderException {
-		setReader(new CTFTraceReader(new CTFTrace(tracePath)));
+		checkNumStreams();
 	}
 
 	public void registerHook(ITraceEventHandler handler, TraceHook hook) {
@@ -102,28 +97,40 @@ public class TraceReader {
 	public void process() throws Exception {
 		loadTrace();
 		EventDefinition event;
-		Long eventId;
+		CTFTraceReader currentReader;
+		String eventName;
 		cancel = false;
 
 		for(ITraceEventHandler handler: handlers.values()) {
 			if (cancel == true)
 				break;
-			handler.handleInit(this, getReader().getTrace());
+			handler.handleInit(this);
 		}
 		// Re-throw any handler exception
 		if (exception != null)
 			throw exception;
 
-		buildHookCache();
-		getReader().seek(0);
-		while((event=getReader().getCurrentEventDef()) != null && cancel == false) {
+		for (CTFTraceReader reader: readers) {
+			reader.seek(0);
+		}
+		
+		PriorityQueue<CTFTraceReader> prio = new PriorityQueue<CTFTraceReader>(readers.size(), new CTFTraceReaderComparator());
+		prio.addAll(readers);
+		//while((event=getReader().getCurrentEventDef()) != null && cancel == false) {
+		while((currentReader=prio.poll()) != null) {
+			event = currentReader.getCurrentEventDef();
+			if (event == null)
+				continue;
+			if (cancel == true || exception != null)
+				break;
 			timeKeeper.setCurrentTime(event.getTimestamp());
-			eventId = event.getDeclaration().getId();
-			TreeSet<TraceHook> treeSet = eventHookMapCache.get(eventId);
+			eventName = event.getDeclaration().getName();
+			TreeSet<TraceHook> treeSet = eventHookMap.get(eventName);
 			if (treeSet != null)
 				runHookSet(treeSet, event);
 			runHookSet(catchAllHook, event);
-			getReader().advance();
+			currentReader.advance();
+			prio.add(currentReader);
 		}
 
 		// Re-throw any handler exception
@@ -132,26 +139,6 @@ public class TraceReader {
 
 		for(ITraceEventHandler handler: handlers.values()) {
 			handler.handleComplete(this);
-		}
-	}
-
-	public void buildHookCache() {
-		CTFTrace trace = getReader().getTrace();
-		Set<Long> streamIds = trace.getStreams().keySet();
-		for (Long id: streamIds) {
-			HashMap<Long, EventDeclaration> decl = trace.getEvents(id);
-			for (Long evId: decl.keySet()) {
-				String eventName = decl.get(evId).getName();
-				Set<TraceHook> hooks = eventHookMap.get(eventName);
-				if (hooks == null)
-						continue;
-				TreeSet<TraceHook> set = eventHookMapCache.get(evId);
-				if (set == null) {
-					set = new TreeSet<TraceHook>();
-					eventHookMapCache.put(evId, set);
-				}
-				set.addAll(hooks);
-			}
 		}
 	}
 
@@ -178,14 +165,6 @@ public class TraceReader {
 		return handlers.get(klass);
 	}
 
-	public Long getStartTime() {
-		return getReader().getStartTime();
-	}
-
-	public Long getEndTime() {
-		return getReader().getEndTime();
-	}
-
 	public void cancel() {
 		this.cancel = true;
 	}
@@ -198,24 +177,39 @@ public class TraceReader {
 		return this.cancel;
 	}
 
-	public CTFTraceReader getReader() {
-		return reader;
+	public void addReader(CTFTraceReader reader) {
+		readers.add(reader);
 	}
 
-	public void setReader(CTFTraceReader reader) {
-		this.reader = reader;
+	public void checkNumStreams() {
+		if (readers.isEmpty())
+			return;
+		int min = Integer.MAX_VALUE;
+		int max = Integer.MIN_VALUE;
+		for (CTFTraceReader reader: readers) {
+			int num = getNumStreams(reader);
+			min = Math.min(num, min);
+			max = Math.max(num, max);
+		}
+		if (min != max) {
+			throw new RuntimeException("All traces must have the same number of streams");
+		}
+		setNbCpus(max);
+	}
+	
+	public static int getNumStreams(CTFTraceReader reader) {
 		Field field;
 		try {
 			field = reader.getClass().getDeclaredField("streamInputReaders");
 			field.setAccessible(true);
 			Vector v = (Vector) field.get(reader);
-			setNbCpus(v.size());
+			return v.size();
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new RuntimeException("Error trying to retreive the number of CPUs of the trace");
-		}
+		}		
 	}
-
+	
 	public int getNumCpus() {
 		return nbCpus;
 	}
@@ -227,6 +221,10 @@ public class TraceReader {
 	public void clearHandlers() {
 		this.handlers.clear();
 		this.eventHookMap.clear();
-		this.eventHookMapCache.clear();
+	}
+	
+	public void addTrace(File file) throws CTFReaderException {
+		CTFTraceReader reader = new CTFTraceReader(new CTFTrace(file));
+		addReader(reader);
 	}
 }

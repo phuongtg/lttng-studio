@@ -1,7 +1,6 @@
 package org.lttng.studio.state;
 
 import org.eclipse.linuxtools.ctf.core.event.EventDefinition;
-import org.eclipse.linuxtools.ctf.core.trace.CTFTrace;
 import org.lttng.studio.reader.TraceEventHandlerBase;
 import org.lttng.studio.reader.TraceHook;
 import org.lttng.studio.reader.TraceReader;
@@ -15,7 +14,7 @@ public class ThreadEventHandler extends TraceEventHandlerBase {
 	}
 	
 	@Override
-	public void handleInit(TraceReader reader, CTFTrace trace) {
+	public void handleInit(TraceReader reader) {
 		count = 0;
 	} 
 

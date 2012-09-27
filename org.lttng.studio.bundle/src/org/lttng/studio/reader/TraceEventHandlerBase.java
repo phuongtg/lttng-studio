@@ -3,8 +3,6 @@ package org.lttng.studio.reader;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.eclipse.linuxtools.ctf.core.trace.CTFTrace;
-
 public class TraceEventHandlerBase implements ITraceEventHandler {
 
 	private static int autoPriority = 0;
@@ -30,7 +28,7 @@ public class TraceEventHandlerBase implements ITraceEventHandler {
 	}
 
 	@Override
-	public void handleInit(TraceReader reader, CTFTrace trace) {
+	public void handleInit(TraceReader reader) {
 
 	}
 

@@ -6,7 +6,6 @@ import org.eclipse.linuxtools.ctf.core.event.EventDefinition;
 import org.eclipse.linuxtools.ctf.core.event.types.Definition;
 import org.eclipse.linuxtools.ctf.core.event.types.IntegerDefinition;
 import org.eclipse.linuxtools.ctf.core.event.types.StringDefinition;
-import org.eclipse.linuxtools.ctf.core.trace.CTFTrace;
 import org.lttng.studio.model.FD;
 import org.lttng.studio.model.ModelRegistry;
 import org.lttng.studio.model.SystemModel;
@@ -40,7 +39,7 @@ public class TraceEventHandlerFD extends TraceEventHandlerBase {
 	}
 
 	@Override
-	public void handleInit(TraceReader reader, CTFTrace trace) {
+	public void handleInit(TraceReader reader) {
 		try {
 			system = (SystemModel) ModelRegistry.getInstance().getOrCreateModel(reader, SystemModel.class);
 		} catch (Exception e) {

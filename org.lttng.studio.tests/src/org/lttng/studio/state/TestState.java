@@ -21,7 +21,8 @@ public class TestState {
 	//@Test
 	public void testStatedumpTask() throws Exception {
 		File traceDir = TestTraceset.getKernelTrace("burnP6-1x-1sec-k");
-		TraceReader reader = new TraceReader(traceDir);
+		TraceReader reader = new TraceReader();
+		reader.addTrace(traceDir);
 		StatedumpEventHandler handler = new StatedumpEventHandler();
 		reader.register(handler);
 		reader.process();
@@ -33,7 +34,8 @@ public class TestState {
 	//@Test
 	public void testStatedumpFDs() throws Exception {
 		File traceDir = TestTraceset.getKernelTrace("burnP6-1x-1sec-k");
-		TraceReader reader = new TraceReader(traceDir);
+		TraceReader reader = new TraceReader();
+		reader.addTrace(traceDir);
 		StatedumpEventHandler handler = new StatedumpEventHandler();
 		reader.register(handler);
 		reader.process();
@@ -45,7 +47,8 @@ public class TestState {
 	//@Test
 	public void testRetrieveCurrentTask() throws Exception {
 		File traceDir = TestTraceset.getKernelTrace("burnP6-1x-1sec-k");
-		TraceReader reader = new TraceReader(traceDir);
+		TraceReader reader = new TraceReader();
+		reader.addTrace(traceDir);
 		TraceEventHandlerProcess handler = new TraceEventHandlerProcess();
 		reader.register(handler);
 		reader.process();
@@ -56,7 +59,8 @@ public class TestState {
 	@Test
 	public void testHandleOpenCloseFDs() throws Exception {
 		File traceDir = TestTraceset.getKernelTrace("burnP6-1x-1sec-k");
-		TraceReader reader = new TraceReader(traceDir);
+		TraceReader reader = new TraceReader();
+		reader.addTrace(traceDir);
 
 		SystemModel model1 = (SystemModel) ModelRegistry.getInstance().getOrCreateModel(reader, SystemModel.class);
 		// Phase 1: build initial state

@@ -4,8 +4,6 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 
 public class TestTraceset {
 
@@ -33,9 +31,27 @@ public class TestTraceset {
 	}
 	
 	public static File getKernelTrace(String name) throws IOException {
+		return findTraceDir(name, "kernel");
+	}
+	
+	// FIXME: returns all UST sub-directories
+	public static File getUSTTrace(String name) throws IOException {
+		File traceDir = findTraceDir(name, "ust");
+		File[] dirs = traceDir.listFiles();
+		File found = null;
+		for (File file: dirs) {
+			if (file.isDirectory()) {
+				found = file;
+				break;
+			}
+		}
+		return found;
+	}
+	
+	public static File findTraceDir(String name, String type) throws IOException {
 		File tracesetDir = getLatestTraceset();
 		File traceDir = new File(tracesetDir, name);
-		traceDir = new File(traceDir, "kernel");
+		traceDir = new File(traceDir, type);
 		if (!traceDir.isDirectory()) {
 			throw new IOException("Trace " + traceDir.getName() + " doesn't exists in " + tracesetDir);
 		}

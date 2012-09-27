@@ -1,7 +1,6 @@
 package org.lttng.studio.reader;
 
 import org.eclipse.linuxtools.ctf.core.event.EventDefinition;
-import org.eclipse.linuxtools.ctf.core.trace.CTFTrace;
 import org.lttng.studio.model.EventCounter;
 import org.lttng.studio.model.ModelRegistry;
 
@@ -19,12 +18,13 @@ public class TraceEventHandlerCounter extends TraceEventHandlerBase {
 	}
 
 	@Override
-	public void handleInit(TraceReader reader, CTFTrace trace) {
+	public void handleInit(TraceReader reader) {
 		try {
 			counter = (EventCounter) ModelRegistry.getInstance().getOrCreateModel(reader, EventCounter.class);
 		} catch (Exception e) {
 			reader.cancel(e);
 		}
+		counter.reset();
 	}
 
 	public void handle_all_event(TraceReader reader, EventDefinition event) {

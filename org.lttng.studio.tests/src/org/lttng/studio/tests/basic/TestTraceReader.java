@@ -23,7 +23,8 @@ public class TestTraceReader {
 	@Test
 	public void testSimpleTraceReaderLoad() throws Exception {
 		File trace = TestTraceset.getKernelTrace("burnP6-1x-1sec-k");
-		TraceReader reader = new TraceReader(trace);
+		TraceReader reader = new TraceReader();
+		reader.addTrace(trace);
 		TraceEventHandlerCounter handler = new TraceEventHandlerCounter();
 		reader.register(handler);
 		reader.process();
@@ -34,9 +35,46 @@ public class TestTraceReader {
 	@Test
 	public void testGetNbCpus() throws IOException, CTFReaderException {
 		File trace = TestTraceset.getKernelTrace("burnP6-1x-1sec-k");
-		TraceReader reader = new TraceReader(trace);
+		TraceReader reader = new TraceReader();
+		reader.addTrace(trace);
 		reader.loadTrace();
 		// assume traces comes from 8 cores CPU
 		assertEquals(8, reader.getNumCpus());
+	}
+	
+	@Test
+	public void testLoadMultipleTraces() throws Exception {
+		EventCounter counter;
+		TraceReader reader;
+		File trace1 = TestTraceset.getKernelTrace("wk-heartbeat-k-u");
+		File trace2 = TestTraceset.getUSTTrace("wk-heartbeat-k-u");
+		TraceEventHandlerCounter handler = new TraceEventHandlerCounter();
+		
+		// trace 1
+		reader = new TraceReader();
+		reader.register(handler);
+		reader.addTrace(trace1);
+		reader.process();
+		counter = (EventCounter) ModelRegistry.getInstance().getOrCreateModel(reader, EventCounter.class);
+		long cnt1 = counter.getCounter();
+
+		// trace 2
+		reader = new TraceReader();
+		reader.register(handler);
+		reader.addTrace(trace2);
+		reader.process();
+		counter = (EventCounter) ModelRegistry.getInstance().getOrCreateModel(reader, EventCounter.class);
+		long cnt2 = counter.getCounter();
+		
+		// trace 1 and 2
+		reader = new TraceReader();
+		reader.register(handler);
+		reader.addTrace(trace1);
+		reader.addTrace(trace2);
+		reader.process();
+		counter = (EventCounter) ModelRegistry.getInstance().getOrCreateModel(reader, EventCounter.class);
+		long cnt3 = counter.getCounter();
+		
+		assertEquals(cnt1 + cnt2, cnt3);
 	}
 }

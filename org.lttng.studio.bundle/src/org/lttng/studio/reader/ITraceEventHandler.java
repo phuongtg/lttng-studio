@@ -8,7 +8,7 @@ public interface ITraceEventHandler extends Comparable<ITraceEventHandler> {
 	
 	public Set<TraceHook> getHooks();
 	
-	public void handleInit(TraceReader reader, CTFTrace trace);
+	public void handleInit(TraceReader reader);
 	
 	public void handleComplete(TraceReader reader);
 
