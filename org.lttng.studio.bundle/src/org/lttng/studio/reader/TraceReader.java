@@ -19,7 +19,7 @@ import org.eclipse.linuxtools.ctf.core.trace.CTFTraceReader;
 
 public class TraceReader {
 
-	private List<CTFTraceReader> readers;
+	private final List<CTFTraceReader> readers;
 	private final Map<Class<?>, ITraceEventHandler> handlers;
 	private final Map<String, TreeSet<TraceHook>> eventHookMap;
 	private final TreeSet<TraceHook> catchAllHook;
@@ -28,6 +28,7 @@ public class TraceReader {
 	private boolean cancel;
 	private int nbCpus;
 	private Exception exception;
+	private CTFTraceReader currentReader;
 
 	public TraceReader() {
 		handlers = new HashMap<Class<?>, ITraceEventHandler>();
@@ -35,7 +36,6 @@ public class TraceReader {
 		catchAllHook = new TreeSet<TraceHook>();
 		readers = new ArrayList<CTFTraceReader>();
 		timeKeeper = TimeKeeper.getInstance();
-		
 	}
 
 	public void loadTrace() throws CTFReaderException {
@@ -97,7 +97,6 @@ public class TraceReader {
 	public void process() throws Exception {
 		loadTrace();
 		EventDefinition event;
-		CTFTraceReader currentReader;
 		String eventName;
 		cancel = false;
 
@@ -113,12 +112,12 @@ public class TraceReader {
 		for (CTFTraceReader reader: readers) {
 			reader.seek(0);
 		}
-		
+
 		PriorityQueue<CTFTraceReader> prio = new PriorityQueue<CTFTraceReader>(readers.size(), new CTFTraceReaderComparator());
 		prio.addAll(readers);
 		//while((event=getReader().getCurrentEventDef()) != null && cancel == false) {
-		while((currentReader=prio.poll()) != null) {
-			event = currentReader.getCurrentEventDef();
+		while((setCurrentReader(prio.poll())) != null) {
+			event = getCurrentCtfReader().getCurrentEventDef();
 			if (event == null)
 				continue;
 			if (cancel == true || exception != null)
@@ -129,8 +128,8 @@ public class TraceReader {
 			if (treeSet != null)
 				runHookSet(treeSet, event);
 			runHookSet(catchAllHook, event);
-			currentReader.advance();
-			prio.add(currentReader);
+			getCurrentCtfReader().advance();
+			prio.add(getCurrentCtfReader());
 		}
 
 		// Re-throw any handler exception
@@ -196,7 +195,7 @@ public class TraceReader {
 		}
 		setNbCpus(max);
 	}
-	
+
 	public static int getNumStreams(CTFTraceReader reader) {
 		Field field;
 		try {
@@ -207,9 +206,9 @@ public class TraceReader {
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new RuntimeException("Error trying to retreive the number of CPUs of the trace");
-		}		
+		}
 	}
-	
+
 	public int getNumCpus() {
 		return nbCpus;
 	}
@@ -222,9 +221,22 @@ public class TraceReader {
 		this.handlers.clear();
 		this.eventHookMap.clear();
 	}
-	
+
 	public void addTrace(File file) throws CTFReaderException {
 		CTFTraceReader reader = new CTFTraceReader(new CTFTrace(file));
 		addReader(reader);
+	}
+
+	public List<CTFTraceReader> getCTFTraceReaders() {
+		return readers;
+	}
+
+	public CTFTraceReader getCurrentCtfReader() {
+		return currentReader;
+	}
+
+	public CTFTraceReader setCurrentReader(CTFTraceReader currentReader) {
+		this.currentReader = currentReader;
+		return currentReader;
 	}
 }

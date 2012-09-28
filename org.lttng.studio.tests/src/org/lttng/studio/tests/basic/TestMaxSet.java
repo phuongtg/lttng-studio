@@ -19,7 +19,6 @@ public class TestMaxSet {
 	public void testMaxHeap() {
 		int size = 10;
 		Set<Long> exp = new TreeSet<Long>();
-		MinMaxPriorityQueue.maximumSize(size);
 		Builder<Long> builder2 = MinMaxPriorityQueue.orderedBy(new Comparator<Long>() {
 			@Override
 			public int compare(Long self, Long other) {
@@ -29,8 +28,8 @@ public class TestMaxSet {
 		});
 		builder2.maximumSize(size);
 		MinMaxPriorityQueue<Long> heap = builder2.create();
-		
-		
+
+
 		for(long i = -100; i < 100; i++) {
 			heap.add(i);
 		}
@@ -43,7 +42,7 @@ public class TestMaxSet {
 		*/
 		SetView<Long> diff = Sets.symmetricDifference(exp, new TreeSet<Long>(heap));
 		assertEquals(0, diff.size());
-		
+
 	}
 
 }
