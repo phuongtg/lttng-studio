@@ -19,26 +19,6 @@ public class MainLatency {
 			reader.addTrace(new File(path));
 		}
 
-		/*
-		List<CTFTraceReader> ctfTraceReaders = reader.getCTFTraceReaders();
-		for (CTFTraceReader r: ctfTraceReaders) {
-			CTFClock clock = r.getTrace().getClock();
-
-			Field field;
-			HashMap<String, Object> v = null;
-			try {
-				field = clock.getClass().getDeclaredField("properties");
-				field.setAccessible(true);
-				v = (HashMap<String, Object>) field.get(clock);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-
-			System.out.println(v);
-		}
-		return;
-		*/
-
 		// Phase 1: build initial state
 		StatedumpEventHandler h0 = new StatedumpEventHandler();
 		reader.register(h0);
@@ -53,6 +33,7 @@ public class MainLatency {
 		reader.register(h2);
 		reader.process();
 
+		// Display results
 		h2.printLatencyTable();
 		h2.printStatsTable();
 		h2.printHighLatency();
