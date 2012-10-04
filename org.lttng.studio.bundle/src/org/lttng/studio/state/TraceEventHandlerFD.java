@@ -112,16 +112,9 @@ public class TraceEventHandlerFD extends TraceEventHandlerBase {
 			break;
 		case SYS_DUP2:
 			if (ret >= 0) {
+				// verify system call success
 				assert(ret == ev.newfd);
-				// dup2 does nothing if oldfd == newfd
-				if (ev.oldfd == ev.newfd)
-					break;
-				// Copy oldfd, assign newfd
-				FD oldfd = system.getFD(task.getPid(), ev.oldfd);
-				String name = (oldfd != null) ? oldfd.getName() : null;
-				FD newfd = new FD(ev.newfd, name);
-				system.removeFD(task.getPid(), ev.oldfd);
-				system.addFD(task.getPid(), newfd);
+				system.dup2FD(task.getPid(), ev.oldfd,  ev.newfd);
 			}
 			break;
 		default:

@@ -6,7 +6,6 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.util.Collection;
-import java.util.Set;
 
 import org.junit.Test;
 import org.lttng.studio.model.FD;
@@ -40,7 +39,7 @@ public class TestState {
 		reader.register(handler);
 		reader.process();
 		SystemModel system = (SystemModel) ModelRegistry.getInstance().getModel(reader, SystemModel.class);
-		Set<FD> fds = system.getFDs();
+		Collection<FD> fds = system.getFDs();
 		assertTrue(fds.size() > 0);
 	}
 

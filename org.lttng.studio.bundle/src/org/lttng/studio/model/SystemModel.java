@@ -2,15 +2,20 @@ package org.lttng.studio.model;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
 
 import org.lttng.studio.reader.TraceReader;
+
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.HashBiMap;
+import com.google.common.collect.Table;
 
 public class SystemModel implements ITraceModel {
 
 	private HashMap<Long, Task> tasks; // (tid, task)
-	private HashMap<Long, HashMap<Long, FD>> fds; // (pid, (id, fd))
+	private Table<Long, Long, FD> fdsTable; // (pid, id, fd)
+	private Table<Long, Long, InetSock> socksTable; // (pid, sk, sock)
+	private BiMap<Long, Long> sockFd; // (sk, fd)
 	private long[] current;			// (cpu, tid)
 	private int numCpus;
 	private boolean isInitialized = false;
@@ -23,7 +28,9 @@ public class SystemModel implements ITraceModel {
 		if (isInitialized == false){
 			numCpus = reader.getNumCpus();
 			tasks = new HashMap<Long, Task>();
-			fds = new HashMap<Long, HashMap<Long, FD>>();
+			fdsTable =  HashBasedTable.create();
+			socksTable = HashBasedTable.create();
+			sockFd = HashBiMap.create();
 			current = new long[numCpus];
 			// Swapper task is always present
 			Task swapper = new Task();
@@ -70,24 +77,73 @@ public class SystemModel implements ITraceModel {
 		isInitialized = false;
 	}
 
+	/*
+	 * FIXME: there seems between FD and Sock
+	 * Opportunity to simplify into object with some id per pid
+	 */
+
+	/*
+	 * FDs management
+	 */
 	public void addFD(long pid, FD fd) {
-		if (!fds.containsKey(pid)) {
-			fds.put(pid, new HashMap<Long, FD>());
-		}
-		fds.get(pid).put(fd.getNum(), fd);
+		fdsTable.put(pid, fd.getNum(), fd);
 	}
 
-	public void removeFD(long pid, FD fd) {
-		if (fds.containsKey(pid)) {
-			HashMap<Long, FD> map = fds.get(pid);
-			map.remove(fd.getNum());
-		}
+	public void removeFD(long pid, long fdNum) {
+		fdsTable.remove(pid, fdNum);
 	}
 
 	public FD getFD(long pid, long num) {
-		if (!fds.containsKey(pid))
-			return null;
-		return fds.get(pid).get(num);
+		return fdsTable.get(pid, num);
+	}
+
+	public Collection<FD> getFDs() {
+		return fdsTable.values();
+	}
+
+	public void dup2FD(long pid, long oldfd, long newfd) {
+		// dup2 does nothing if oldfd == newfd
+		if (oldfd == newfd)
+			return;
+		// Copy oldfd, assign newfd
+		FD ofd = getFD(pid, oldfd);
+		String name = null;
+		if (ofd == null) {
+			System.err.println("WARNING: dup2 of unkown fd");
+		} else {
+			name = ofd.getName();
+		}
+		FD nfd = new FD(newfd, name);
+		removeFD(pid, oldfd);
+		addFD(pid, nfd);
+
+		// manage sock relationship if any
+
+	}
+
+	/*
+	 * Socks management
+	 */
+	public void addInetSock(long pid, InetSock sock) {
+		socksTable.put(pid, sock.getSk(), sock);
+	}
+
+	public void removeInetSock(long pid, long sk) {
+		socksTable.remove(pid, sk);
+	}
+
+	public InetSock getInetSock(long pid, long sk) {
+		return socksTable.get(pid, sk);
+	}
+
+	public Collection<InetSock> getInetSocks() {
+		return socksTable.values();
+	}
+
+	public void setInetSockFd(long sock, long fd) {
+		// FIXME: this is shitty because BiMap can't have duplicated value
+		// and FDs numbers are not unique on the system, but sk pointer is
+		sockFd.forcePut(sock, fd);
 	}
 
 	@Override
@@ -96,27 +152,12 @@ public class SystemModel implements ITraceModel {
 		str.append("Tasks\n");
 		for (Task task: tasks.values()) {
 			str.append(String.format("%10d %10d %10d %s\n", task.getPid(), task.getTid(), task.getPpid(), task.getName()));
-			if (fds.containsKey(task.getPid())) {
-				for (FD fd: fds.get(task.getPid()).values())
-					str.append(String.format("\t%d %s\n", fd.getNum(), fd.getName()));
+			for (Long fdNum: fdsTable.rowKeySet()) {
+				FD fd = fdsTable.get(task.getPid(), fdNum);
+				str.append(String.format("\t%d %s\n", fd.getNum(), fd.getName()));
 			}
 		}
 		return str.toString();
-	}
-
-	public Set<FD> getFDs() {
-		HashSet<FD> set = new HashSet<FD>();
-		for (Long pid: fds.keySet()) {
-			set.addAll(fds.get(pid).values());
-		}
-		return set;
-	}
-
-	public void removeFD(long pid, long fd) {
-		if (fds.containsKey(pid)) {
-			HashMap<Long, FD> map = fds.get(pid);
-			map.remove(fd);
-		}
 	}
 
 }
