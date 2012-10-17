@@ -1,13 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<application:Application xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:advanced="http://www.eclipse.org/ui/2010/UIModel/application/ui/advanced" xmlns:application="http://www.eclipse.org/ui/2010/UIModel/application" xmlns:basic="http://www.eclipse.org/ui/2010/UIModel/application/ui/basic" xmlns:menu="http://www.eclipse.org/ui/2010/UIModel/application/ui/menu" xmi:id="_mdcf8ANHEeK_NoFK4DWaaA" elementId="org.eclipse.e4.ide.application" bindingContexts="_mdcf8QNHEeK_NoFK4DWaaA">
+<application:Application xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:application="http://www.eclipse.org/ui/2010/UIModel/application" xmlns:basic="http://www.eclipse.org/ui/2010/UIModel/application/ui/basic" xmlns:menu="http://www.eclipse.org/ui/2010/UIModel/application/ui/menu" xmi:id="_mdcf8ANHEeK_NoFK4DWaaA" elementId="org.eclipse.e4.ide.application" bindingContexts="_mdcf8QNHEeK_NoFK4DWaaA">
   <children xsi:type="basic:TrimmedWindow" xmi:id="_mddHFANHEeK_NoFK4DWaaA" label="org.lttng.studio.bundle" width="500" height="400">
-    <children xsi:type="advanced:PerspectiveStack" xmi:id="_mddHHANHEeK_NoFK4DWaaA">
-      <children xsi:type="advanced:Perspective" xmi:id="_mddHHQNHEeK_NoFK4DWaaA">
-        <children xsi:type="basic:PartSashContainer" xmi:id="_mddHHgNHEeK_NoFK4DWaaA">
-          <children xsi:type="basic:PartStack" xmi:id="_mddHHwNHEeK_NoFK4DWaaA"/>
-        </children>
-      </children>
-    </children>
+    <children xsi:type="basic:Part" xmi:id="_tsrQUBbbEeK3lug7bWi_qw" elementId="org.lttng.studio.bundle.part.0" contributionURI="bundleclass://org.lttng.studio.bundle/org.lttng.studio.ui.widget.DemoSequenceDiagramView"/>
     <mainMenu xmi:id="_mddHFQNHEeK_NoFK4DWaaA" elementId="menu:org.eclipse.ui.main.menu">
       <children xsi:type="menu:Menu" xmi:id="_mddHFgNHEeK_NoFK4DWaaA" label="File">
         <children xsi:type="menu:HandledMenuItem" xmi:id="_mddHFwNHEeK_NoFK4DWaaA" label="Open" iconURI="platform:/plugin/org.lttng.studio.bundle/icons/sample.gif" command="_mddHCwNHEeK_NoFK4DWaaA"/>
