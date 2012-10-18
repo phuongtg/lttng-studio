@@ -2,6 +2,11 @@ package org.lttng.studio.model;
 
 import java.util.HashMap;
 
+import com.google.common.hash.HashCode;
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hasher;
+import com.google.common.hash.Hashing;
+
 public class Task {
 
 	public enum lttng_thread_type {
@@ -137,7 +142,7 @@ public class Task {
 
 	/*
 	 * I hate Java: can't just assign the enum from the int value
-	 */	
+	 */
 	public void setProcess_status(long status) {
 		for (lttng_process_status e: lttng_process_status.values()) {
 			if (e.value() == status) {
@@ -146,7 +151,7 @@ public class Task {
 			}
 		}
 	}
-	
+
 	public lttng_execution_mode getExecution_mode() {
 		return execution_mode;
 	}
@@ -159,7 +164,7 @@ public class Task {
 			}
 		}
 	}
-	
+
 	public void setExecution_mode(lttng_execution_mode execution_mode) {
 		this.execution_mode = execution_mode;
 	}
@@ -180,7 +185,7 @@ public class Task {
 			}
 		}
 	}
-	
+
 	public lttng_thread_type getThread_type() {
 		return thread_type;
 	}
@@ -197,7 +202,7 @@ public class Task {
 			}
 		}
 	}
-	
+
 	public long getPpid() {
 		return ppid;
 	}
@@ -213,8 +218,39 @@ public class Task {
 	public void setName(String name) {
 		this.name = name;
 	}
-	
+
+	@Override
 	public String toString() {
 		return String.format("[%d,%s]", tid, name);
+	}
+
+	/*
+	 * Equals with TID and start time, because TID may wrap.
+	 * In the case of a distributed system, this key may not
+	 * be unique, but assume it's handled at another level.
+	 */
+	@Override
+	public boolean equals(Object other) {
+		if (this == other)
+			return true;
+		if (other == null)
+			return false;
+		if (!(other instanceof Task))
+			return false;
+		Task o = (Task) other;
+		if (o.getTid() == this.getTid() && o.getStart() == this.getStart())
+			return true;
+		return false;
+	}
+
+	@Override
+	public int hashCode() {
+		HashFunction hf = Hashing.goodFastHash(32);
+		Hasher hasher = hf.newHasher();
+		HashCode hc = hasher
+				.putLong(getTid())
+				.putLong(getStart())
+				.hash();
+		return hc.asInt();
 	}
 }

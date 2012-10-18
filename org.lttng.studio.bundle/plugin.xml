@@ -21,15 +21,5 @@
          </property>
       </product>
    </extension>
-   <extension
-         point="org.eclipse.ui.views">
-      <view
-            category="org.eclipse.linuxtools.lttng2.ui.views.category"
-            class="org.lttng.studio.ui.widget.DemoSequenceDiagramView"
-            id="org.lttng.studio.bundle.view1"
-            name="SDView Demo"
-            restorable="true">
-      </view>
-   </extension>
 
 </plugin>
