@@ -9,7 +9,7 @@ import org.eclipse.linuxtools.ctf.core.event.types.StringDefinition;
 import org.lttng.studio.model.FD;
 import org.lttng.studio.model.ModelRegistry;
 import org.lttng.studio.model.SystemModel;
-import org.lttng.studio.model.Task;
+import org.lttng.studio.model.task.Task;
 import org.lttng.studio.reader.TraceEventHandlerBase;
 import org.lttng.studio.reader.TraceHook;
 import org.lttng.studio.reader.TraceReader;
@@ -91,7 +91,6 @@ public class TraceEventHandlerFD extends TraceEventHandlerBase {
 	public void handle_exit_syscall(TraceReader reader, EventDefinition event) {
 		HashMap<String, Definition> def = event.getFields().getDefinitions();
 		int cpu = event.getCPU();
-		system.getTaskCpu(cpu);
 		Task task = system.getTaskCpu(cpu);
 		if (task == null)
 			return;

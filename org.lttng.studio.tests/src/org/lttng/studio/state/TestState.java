@@ -11,7 +11,7 @@ import org.junit.Test;
 import org.lttng.studio.model.FD;
 import org.lttng.studio.model.ModelRegistry;
 import org.lttng.studio.model.SystemModel;
-import org.lttng.studio.model.Task;
+import org.lttng.studio.model.task.Task;
 import org.lttng.studio.reader.TraceReader;
 import org.lttng.studio.tests.basic.TestTraceset;
 
@@ -48,7 +48,7 @@ public class TestState {
 		File traceDir = TestTraceset.getKernelTrace("burnP6-1x-1sec-k");
 		TraceReader reader = new TraceReader();
 		reader.addTrace(traceDir);
-		TraceEventHandlerProcess handler = new TraceEventHandlerProcess();
+		TraceEventHandlerSched handler = new TraceEventHandlerSched();
 		reader.register(handler);
 		reader.process();
 		SystemModel model = (SystemModel) ModelRegistry.getInstance().getModel(reader, SystemModel.class);
@@ -69,7 +69,7 @@ public class TestState {
 		reader.clearHandlers();
 
 		// Phase 2: update current state
-		TraceEventHandlerProcess h1 = new TraceEventHandlerProcess();
+		TraceEventHandlerSched h1 = new TraceEventHandlerSched();
 		TraceEventHandlerFD h2 = new TraceEventHandlerFD();
 		reader.register(h1);
 		reader.register(h2);

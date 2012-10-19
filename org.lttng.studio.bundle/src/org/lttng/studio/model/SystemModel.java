@@ -3,6 +3,7 @@ package org.lttng.studio.model;
 import java.util.Collection;
 import java.util.HashMap;
 
+import org.lttng.studio.model.task.Task;
 import org.lttng.studio.reader.TraceReader;
 
 import com.google.common.collect.BiMap;

@@ -10,7 +10,7 @@ import org.eclipse.linuxtools.ctf.core.event.types.StringDefinition;
 import org.lttng.studio.model.FD;
 import org.lttng.studio.model.ModelRegistry;
 import org.lttng.studio.model.SystemModel;
-import org.lttng.studio.model.Task;
+import org.lttng.studio.model.task.Task;
 import org.lttng.studio.reader.TraceEventHandlerBase;
 import org.lttng.studio.reader.TraceHook;
 import org.lttng.studio.reader.TraceReader;
@@ -75,10 +75,10 @@ public class StatedumpEventHandler extends TraceEventHandlerBase {
 		Task task = new Task(tid.getValue());
 		task.setPid(pid.getValue());
 		task.setPpid(ppid.getValue());
-		task.setExecution_mode(mode.getValue());
-		task.setExecution_submode(submode.getValue());
-		task.setProcess_status(status.getValue());
-		task.setThread_type(type.getValue());
+		task.setExecutionMode(mode.getValue());
+		task.setExecutionSubmode(submode.getValue());
+		task.setProcessStatus(status.getValue());
+		task.setThreadType(type.getValue());
 		task.setName(name.toString());
 		system.putTask(task);
 	}

@@ -23,10 +23,12 @@
    </vm>
 
    <plugins>
+      <plugin id="cloning"/>
       <plugin id="com.google.guava"/>
       <plugin id="com.ibm.icu"/>
       <plugin id="javax.annotation"/>
       <plugin id="javax.inject"/>
+      <plugin id="jgrapht"/>
       <plugin id="org.antlr.runtime"/>
       <plugin id="org.apache.batik.css"/>
       <plugin id="org.apache.batik.util"/>

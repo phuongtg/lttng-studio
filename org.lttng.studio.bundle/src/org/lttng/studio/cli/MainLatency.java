@@ -5,7 +5,7 @@ import java.io.File;
 import org.lttng.studio.latency.model.LatencyEventHandler;
 import org.lttng.studio.reader.TraceReader;
 import org.lttng.studio.state.StatedumpEventHandler;
-import org.lttng.studio.state.TraceEventHandlerProcess;
+import org.lttng.studio.state.TraceEventHandlerSched;
 
 public class MainLatency {
 
@@ -26,7 +26,7 @@ public class MainLatency {
 		reader.clearHandlers();
 
 		// Phase 2: update current state
-		TraceEventHandlerProcess h1 = new TraceEventHandlerProcess();
+		TraceEventHandlerSched h1 = new TraceEventHandlerSched();
 		LatencyEventHandler h2 = new LatencyEventHandler();
 		h2.monitorEvent("npt:loop");
 		reader.register(h1);
