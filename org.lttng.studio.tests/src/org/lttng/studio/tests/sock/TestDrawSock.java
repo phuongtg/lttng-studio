@@ -1,14 +1,7 @@
 package org.lttng.studio.tests.sock;
 
-import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
-import org.eclipse.swt.graphics.GC;
-import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.graphics.ImageData;
-import org.eclipse.swt.graphics.ImageLoader;
 import org.eclipse.swt.graphics.Point;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.lttng.studio.net.ui.Actor;
 import org.lttng.studio.net.ui.Interval;
@@ -16,32 +9,7 @@ import org.lttng.studio.net.ui.Message;
 import org.lttng.studio.net.ui.MessagePainter;
 import org.lttng.studio.ui.Arrow;
 
-public class TestDrawSock {
-
-	static int imgWidth = 800;
-	static int imgHeight = 200;
-	static int border = 40;
-	Image img;
-	GC gc;
-	String testName;
-
-	@Before
-	public void setup() {
-		img = new Image(null, imgWidth, imgHeight);
-		gc = new GC(img);
-	}
-
-	@After
-	public void teardown() {
-		img.dispose();
-		gc.dispose();
-	}
-
-	public void saveImage(Image img, String name) {
-		ImageLoader loader = new ImageLoader();
-		loader.data = new ImageData[] { img.getImageData() };
-		loader.save(name + ".png", SWT.IMAGE_PNG);
-	}
+public class TestDrawSock extends ImageOutput {
 
 	@Test
 	public void testDrawSock() {

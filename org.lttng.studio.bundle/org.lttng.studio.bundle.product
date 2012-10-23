@@ -23,7 +23,7 @@
    </vm>
 
    <plugins>
-      <plugin id="cloning"/>
+      <plugin id="cloner"/>
       <plugin id="com.google.guava"/>
       <plugin id="com.ibm.icu"/>
       <plugin id="javax.annotation"/>

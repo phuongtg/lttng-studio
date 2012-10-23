@@ -1,11 +1,11 @@
 package org.lttng.studio.model;
 
-import com.google.common.net.InetAddresses;
+import java.net.InetAddress;
 
 public class InetSock {
 
 	private long sk;
-	private InetAddresses addr;
+	private InetAddress addr;
 
 	public long getSk() {
 		return sk;
@@ -15,12 +15,16 @@ public class InetSock {
 		this.sk = sk;
 	}
 
-	public InetAddresses getInetAddr() {
+	public InetAddress getInetAddr() {
 		return addr;
 	}
 
-	public void setInetAddr(InetAddresses addr) {
+	public void setInetAddr(InetAddress addr) {
 		this.addr = addr;
 	}
 
+	@Override
+	public String toString() {
+		return String.format("[0x%s,%s]", Long.toHexString(sk), addr != null ? addr.toString() : null);
+	}
 }
