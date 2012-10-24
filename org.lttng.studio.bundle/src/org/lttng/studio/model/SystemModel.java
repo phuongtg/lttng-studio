@@ -15,7 +15,7 @@ public class SystemModel implements ITraceModel {
 
 	private HashMap<Long, Task> tasks; // (tid, task)
 	private Table<Long, Long, FD> fdsTable; // (pid, id, fd)
-	private Table<Long, Long, InetSock> socksTable; // (pid, sk, sock)
+	private Table<Long, Long, Inet4Sock> socksTable; // (pid, sk, sock)
 	private BiMap<Long, Long> sockFd; // (sk, fd)
 	private long[] current;			// (cpu, tid)
 	private int numCpus;
@@ -125,7 +125,7 @@ public class SystemModel implements ITraceModel {
 	/*
 	 * Socks management
 	 */
-	public void addInetSock(long pid, InetSock sock) {
+	public void addInetSock(long pid, Inet4Sock sock) {
 		socksTable.put(pid, sock.getSk(), sock);
 	}
 
@@ -133,11 +133,11 @@ public class SystemModel implements ITraceModel {
 		socksTable.remove(pid, sk);
 	}
 
-	public InetSock getInetSock(long pid, long sk) {
+	public Inet4Sock getInetSock(long pid, long sk) {
 		return socksTable.get(pid, sk);
 	}
 
-	public Collection<InetSock> getInetSocks() {
+	public Collection<Inet4Sock> getInetSocks() {
 		return socksTable.values();
 	}
 

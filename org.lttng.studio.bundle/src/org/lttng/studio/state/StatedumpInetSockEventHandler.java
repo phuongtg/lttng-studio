@@ -5,7 +5,7 @@ import java.util.HashMap;
 import org.eclipse.linuxtools.ctf.core.event.EventDefinition;
 import org.eclipse.linuxtools.ctf.core.event.types.Definition;
 import org.eclipse.linuxtools.ctf.core.event.types.IntegerDefinition;
-import org.lttng.studio.model.InetSock;
+import org.lttng.studio.model.Inet4Sock;
 import org.lttng.studio.model.ModelRegistry;
 import org.lttng.studio.model.SystemModel;
 import org.lttng.studio.reader.TraceEventHandlerBase;
@@ -42,7 +42,7 @@ public class StatedumpInetSockEventHandler extends TraceEventHandlerBase {
 		IntegerDefinition pid = (IntegerDefinition) def.get("_pid");
 		IntegerDefinition fd = (IntegerDefinition) def.get("_fd");
 		IntegerDefinition sk = (IntegerDefinition) def.get("_sk");
-		InetSock sock = new InetSock();
+		Inet4Sock sock = new Inet4Sock();
 		sock.setSk(sk.getValue());
 		system.addInetSock(pid.getValue(), sock);
 		system.setInetSockFd(sk.getValue(), fd.getValue());
