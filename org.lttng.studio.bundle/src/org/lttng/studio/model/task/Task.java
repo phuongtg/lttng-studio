@@ -254,4 +254,8 @@ public class Task {
 		return hc.asInt();
 	}
 
+	public boolean isThreadGroupLeader() {
+		return pid == tid;
+	}
+
 }

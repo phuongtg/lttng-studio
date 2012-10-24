@@ -7,6 +7,7 @@ import org.eclipse.linuxtools.ctf.core.event.types.Definition;
 import org.eclipse.linuxtools.ctf.core.event.types.IntegerDefinition;
 import org.eclipse.linuxtools.ctf.core.event.types.StringDefinition;
 import org.lttng.studio.model.FD;
+import org.lttng.studio.model.FDSet;
 import org.lttng.studio.model.ModelRegistry;
 import org.lttng.studio.model.SystemModel;
 import org.lttng.studio.model.task.Task;
@@ -101,19 +102,21 @@ public class TraceEventHandlerFD extends TraceEventHandlerBase {
 		switch (ev.type) {
 		case SYS_CLOSE:
 			if (ret == 0) {
-				system.removeFD(task.getPid(), ev.fd);
+				FDSet fdSet = system.getFDSet(task);
+				FD fd = fdSet.getFD(ev.fd);
+				fdSet.remove(fd);
 			}
 			break;
 		case SYS_OPEN:
 			if (ret >= 0) {
-				system.addFD(task.getPid(), new FD(ret, ev.name));
+				system.addTaskFD(task, new FD(ret, ev.name));
 			}
 			break;
 		case SYS_DUP2:
 			if (ret >= 0) {
 				// verify system call success
 				assert(ret == ev.newfd);
-				system.dup2FD(task.getPid(), ev.oldfd,  ev.newfd);
+				system.dup2FD(task, ev.oldfd,  ev.newfd);
 			}
 			break;
 		default:

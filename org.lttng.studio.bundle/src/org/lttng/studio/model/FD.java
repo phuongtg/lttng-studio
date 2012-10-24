@@ -10,6 +10,10 @@ public class FD {
 		setName(name);
 	}
 
+	public FD(long num) {
+		this(num, null);
+	}
+
 	public long getNum() {
 		return num;
 	}

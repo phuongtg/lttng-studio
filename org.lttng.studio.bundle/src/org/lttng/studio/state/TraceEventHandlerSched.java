@@ -7,6 +7,7 @@ import org.eclipse.linuxtools.ctf.core.event.types.ArrayDefinition;
 import org.eclipse.linuxtools.ctf.core.event.types.Definition;
 import org.eclipse.linuxtools.ctf.core.event.types.IntegerDefinition;
 import org.eclipse.linuxtools.ctf.core.event.types.StringDefinition;
+import org.lttng.studio.model.CloneFlags;
 import org.lttng.studio.model.ModelRegistry;
 import org.lttng.studio.model.SystemModel;
 import org.lttng.studio.model.task.Task;
@@ -177,14 +178,14 @@ public class TraceEventHandlerSched extends TraceEventHandlerBase {
 			}
 			break;
 		case SYS_CLONE:
-			// handle parent
-			if (ret == 0) { 		// parent
-				System.out.println("sys_clone exit parent " + ret);
-			} else if (ret > 0) { 	// child
-				System.out.println("sys_clone exit child  " + ret);
-				// TODO: Copy FD from parent if required
-			} else { 				// failure
-				System.out.println("sys_clone exit failed " + ret);
+			if (ret > 0) { // child
+				if (!CloneFlags.isFlagSet(ev.flags, CloneFlags.CLONE_FILES)) {
+					//copyFileDescriptors();
+				}
+				if (!CloneFlags.isFlagSet(ev.flags, CloneFlags.CLONE_THREAD)) {
+					// Promote a thread to process
+					task.setPid(task.getTid());
+				}
 			}
 			break;
 		default:

@@ -54,18 +54,16 @@ public class TraceEventHandlerSock extends TraceEventHandlerBase {
 		IntegerDefinition dport = (IntegerDefinition) def.get("_dport");
 		Task task = system.getTaskCpu(event.getCPU());
 		System.out.println(task);
-		Inet4Sock sock = system.getInetSock(task.getPid(), sk.getValue());
+		Inet4Sock sock = system.getInetSock(task, sk.getValue());
 		if (sock == null) {
 			System.out.println("Huston, we missed inet_sock_create " + sk.getValue());
 			sock = new Inet4Sock();
 			sock.setSk(sk.getValue());
-			system.addInetSock(task.getPid(), sock);
+			system.addInetSock(task, sock);
 		}
 		sock.setInet((int)saddr.getValue(), (int)daddr.getValue(),
 				(int)sport.getValue(), (int)dport.getValue());
-		system.indexInetSock(sock);
-		//System.out.println(event);
-		//System.out.println(sock);
+		system.matchPeer(sock);
 	}
 
 	public void handle_inet_connect(TraceReader reader, EventDefinition event) {
@@ -82,10 +80,10 @@ public class TraceEventHandlerSock extends TraceEventHandlerBase {
 		Task current = system.getTaskCpu(cpu);
 		IntegerDefinition osk = (IntegerDefinition) def.get("_osk");
 		IntegerDefinition nsk = (IntegerDefinition) def.get("_nsk");
-		Inet4Sock oldSock = system.getInetSock(current.getPid(), osk.getValue());
+		Inet4Sock oldSock = system.getInetSock(current, osk.getValue());
 		Inet4Sock newSock = cloner.deepClone(oldSock);
 		newSock.setSk(nsk.getValue());
-		system.addInetSock(current.getPid(), newSock);
+		system.addInetSock(current, newSock);
 		System.out.println(event);
 	}
 
@@ -96,7 +94,7 @@ public class TraceEventHandlerSock extends TraceEventHandlerBase {
 		Inet4Sock sock = new Inet4Sock();
 		IntegerDefinition sk = (IntegerDefinition) def.get("_sk");
 		sock.setSk(sk.getValue());
-		system.addInetSock(current.getPid(), sock);
+		system.addInetSock(current, sock);
 		System.out.println(event);
 	}
 

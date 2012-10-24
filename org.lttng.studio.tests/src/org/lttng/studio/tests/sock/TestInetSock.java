@@ -48,13 +48,9 @@ public class TestInetSock {
 
 		Inet4Sock sock1 = socks.keySet().iterator().next();
 		Inet4Sock sock2 = socks.get(sock1);
-		long owner1 = model.getInetSockPid(sock1);
-		long owner2 = model.getInetSockPid(sock2);
+		Task owner1 = model.getInetSockTaskOwner(sock1);
+		Task owner2 = model.getInetSockTaskOwner(sock2);
 		System.out.println(owner1 + " " + owner2);
-		Task peer1 = model.getTask(owner1);
-		Task peer2 = model.getTask(owner2);
-		System.out.println(peer1);
-		System.out.println(peer2);
 	}
 
 }

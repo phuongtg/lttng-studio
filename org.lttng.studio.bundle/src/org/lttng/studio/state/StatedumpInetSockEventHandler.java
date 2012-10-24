@@ -8,6 +8,7 @@ import org.eclipse.linuxtools.ctf.core.event.types.IntegerDefinition;
 import org.lttng.studio.model.Inet4Sock;
 import org.lttng.studio.model.ModelRegistry;
 import org.lttng.studio.model.SystemModel;
+import org.lttng.studio.model.task.Task;
 import org.lttng.studio.reader.TraceEventHandlerBase;
 import org.lttng.studio.reader.TraceHook;
 import org.lttng.studio.reader.TraceReader;
@@ -40,12 +41,12 @@ public class StatedumpInetSockEventHandler extends TraceEventHandlerBase {
 	public void handle_lttng_statedump_inet_sock(TraceReader reader, EventDefinition event) {
 		HashMap<String, Definition> def = event.getFields().getDefinitions();
 		IntegerDefinition pid = (IntegerDefinition) def.get("_pid");
-		IntegerDefinition fd = (IntegerDefinition) def.get("_fd");
+		//IntegerDefinition fd = (IntegerDefinition) def.get("_fd");
 		IntegerDefinition sk = (IntegerDefinition) def.get("_sk");
 		Inet4Sock sock = new Inet4Sock();
 		sock.setSk(sk.getValue());
-		system.addInetSock(pid.getValue(), sock);
-		system.setInetSockFd(sk.getValue(), fd.getValue());
+		Task task = system.getTask(pid.getValue());
+		system.addInetSock(task, sock);
 	}
 
 	public void handle_lttng_statedump_end(TraceReader reader, EventDefinition event) {

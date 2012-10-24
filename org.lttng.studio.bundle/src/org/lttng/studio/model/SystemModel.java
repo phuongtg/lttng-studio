@@ -2,24 +2,22 @@ package org.lttng.studio.model;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Map;
+import java.util.HashSet;
 
 import org.lttng.studio.model.task.Task;
 import org.lttng.studio.reader.TraceReader;
 
 import com.google.common.collect.BiMap;
-import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.HashBiMap;
-import com.google.common.collect.Table;
 
 public class SystemModel implements ITraceModel {
 
 	private HashMap<Long, Task> tasks; // (tid, task)
-	private Table<Long, Long, FD> fdsTable; // (pid, id, fd)
-	private Table<Long, Long, Inet4Sock> socksTable; // (pid, sk, sock)
-	private BiMap<Long, Long> sockFd; // (sk, fd)
-	private BiMap<Inet4Sock, Inet4Sock> socksComplement; // (sock1, sock2) where sock1.isComplement(sock2)
-	private Map<Inet4Sock, Long> socksPid; // (sock, pid) fast lookup
+	//private Table<Long, Long, FD> fdsTable; // (pid, id, fd)
+	private HashMap<Task, FDSet> taskFdSet;
+	private BiMap<Inet4Sock, FD> sockFd; // (sk, fd)
+	private BiMap<Inet4Sock, Inet4Sock> sockPeer; // (sock1, sock2) where sock1.isComplement(sock2)
+	private BiMap<Inet4Sock, Task> sockTask; // (sock, task) fast lookup
 	private long[] current;			// (cpu, tid)
 	private int numCpus;
 	private boolean isInitialized = false;
@@ -32,11 +30,10 @@ public class SystemModel implements ITraceModel {
 		if (isInitialized == false){
 			numCpus = reader.getNumCpus();
 			tasks = new HashMap<Long, Task>();
-			fdsTable =  HashBasedTable.create();
-			socksTable = HashBasedTable.create();
+			taskFdSet = new HashMap<Task, FDSet>();
 			sockFd = HashBiMap.create();
-			socksComplement = HashBiMap.create();
-			socksPid = new HashMap<Inet4Sock, Long>();
+			sockPeer = HashBiMap.create();
+			sockTask = HashBiMap.create();
 			current = new long[numCpus];
 			// Swapper task is always present
 			Task swapper = new Task();
@@ -63,6 +60,14 @@ public class SystemModel implements ITraceModel {
 
 	public void putTask(Task task) {
 		tasks.put(task.getTid(), task);
+		// prepare fdset
+		if (task.isThreadGroupLeader()) {
+			taskFdSet.put(task, new FDSet());
+		} else {
+			Task leader = tasks.get(task.getPid());
+			FDSet fds = taskFdSet.get(leader);
+			taskFdSet.put(task, fds);
+		}
 	}
 
 	public Task getTask(long tid) {
@@ -91,28 +96,34 @@ public class SystemModel implements ITraceModel {
 	/*
 	 * FDs management
 	 */
-	public void addFD(long pid, FD fd) {
-		fdsTable.put(pid, fd.getNum(), fd);
+	public void addTaskFD(Task task, FD fd) {
+		FDSet fdSet = taskFdSet.get(task);
+		fdSet.addFD(fd);
 	}
 
-	public void removeFD(long pid, long fdNum) {
-		fdsTable.remove(pid, fdNum);
+	private FD removeTaskFD(Task task, FD ofd) {
+		FDSet fdSet = taskFdSet.get(task);
+		return fdSet.remove(ofd);
 	}
 
-	public FD getFD(long pid, long num) {
-		return fdsTable.get(pid, num);
+	public FD getFD(Task task, long num) {
+		return taskFdSet.get(task).getFD(num);
 	}
 
 	public Collection<FD> getFDs() {
-		return fdsTable.values();
+		HashSet<FD> set = new HashSet<FD>();
+		for (FDSet fds: taskFdSet.values()) {
+			set.addAll(fds.getFDs());
+		}
+		return set;
 	}
 
-	public void dup2FD(long pid, long oldfd, long newfd) {
+	public void dup2FD(Task task, long oldfd, long newfd) {
 		// dup2 does nothing if oldfd == newfd
 		if (oldfd == newfd)
 			return;
 		// Copy oldfd, assign newfd
-		FD ofd = getFD(pid, oldfd);
+		FD ofd = getFD(task, oldfd);
 		String name = null;
 		if (ofd == null) {
 			System.err.println("WARNING: dup2 of unkown fd");
@@ -120,61 +131,56 @@ public class SystemModel implements ITraceModel {
 			name = ofd.getName();
 		}
 		FD nfd = new FD(newfd, name);
-		removeFD(pid, oldfd);
-		addFD(pid, nfd);
+		removeTaskFD(task, ofd);
+		addTaskFD(task, nfd);
 
-		// manage sock relationship if any
+		// TODO: manage sock relationship
 
 	}
 
 	/*
 	 * Socks management
 	 */
-	public void addInetSock(long pid, Inet4Sock sock) {
-		socksTable.put(pid, sock.getSk(), sock);
-		socksPid.put(sock, pid);
+	public Task addInetSock(Task task, Inet4Sock sock) {
+		return sockTask.put(sock, task);
 	}
 
-	public void removeInetSock(long pid, long sk) {
-		Inet4Sock sock = socksTable.remove(pid, sk);
-		socksPid.remove(sock);
+	public Task removeInetSock(Task task, Inet4Sock sock) {
+		return sockTask.remove(sock);
 	}
 
-	public Inet4Sock getInetSock(long pid, long sk) {
-		return socksTable.get(pid, sk);
+	public Inet4Sock getInetSock(Task task, long sk) {
+		return sockTask.inverse().get(new Inet4Sock(sk));
 	}
 
 	public Collection<Inet4Sock> getInetSocks() {
-		return socksTable.values();
+		return sockTask.keySet();
 	}
-
 
 	public BiMap<Inet4Sock, Inet4Sock> getInetSockIndex() {
-		return socksComplement;
+		return sockPeer;
 	}
 
-	public long getInetSockPid(Inet4Sock sock) {
-		if (sock == null || !socksPid.containsKey(sock))
-			return -1;
-		return socksPid.get(sock);
+	public Task getInetSockTaskOwner(Inet4Sock sock) {
+		return sockTask.get(sock);
 	}
 
-	public void indexInetSock(Inet4Sock sock) {
-		if (socksComplement.containsKey(sock) || socksComplement.containsValue(sock))
+	public void matchPeer(Inet4Sock sock) {
+		if (sockPeer.containsKey(sock) || sockPeer.containsValue(sock))
 			return;
-		for (Inet4Sock s: socksTable.values()) {
-			if (s.isComplement(sock)) {
-				socksComplement.put(s, sock);
+		for (Inet4Sock peer: sockTask.keySet()) {
+			if (peer.isComplement(sock)) {
+				sockPeer.put(peer, sock);
 				break;
 			}
 		}
 	}
 
-	public void setInetSockFd(long sock, long fd) {
-		// FIXME: this is shitty because BiMap can't have duplicated value
-		// and FDs numbers are not unique on the system, but sk pointer is
-		sockFd.forcePut(sock, fd);
+	/*
+	public void setInetSockFd(Inet4Sock sock, FD fd) {
+		sockFd.put(sock, fd);
 	}
+	*/
 
 	@Override
 	public String toString() {
@@ -182,12 +188,16 @@ public class SystemModel implements ITraceModel {
 		str.append("Tasks\n");
 		for (Task task: tasks.values()) {
 			str.append(String.format("%10d %10d %10d %s\n", task.getPid(), task.getTid(), task.getPpid(), task.getName()));
-			for (Long fdNum: fdsTable.rowKeySet()) {
-				FD fd = fdsTable.get(task.getPid(), fdNum);
+			Collection<? extends FD> fDs = taskFdSet.get(task).getFDs();
+			for (FD fd: fDs) {
 				str.append(String.format("\t%d %s\n", fd.getNum(), fd.getName()));
 			}
 		}
 		return str.toString();
+	}
+
+	public FDSet getFDSet(Task task) {
+		return taskFdSet.get(task);
 	}
 
 }

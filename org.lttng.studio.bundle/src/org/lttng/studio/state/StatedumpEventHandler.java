@@ -57,8 +57,8 @@ public class StatedumpEventHandler extends TraceEventHandlerBase {
 		IntegerDefinition pid = (IntegerDefinition) def.get("_pid");
 		StringDefinition filename = (StringDefinition) def.get("_filename");
 		IntegerDefinition fd = (IntegerDefinition) def.get("_fd");
-
-		system.addFD(pid.getValue(), new FD(fd.getValue(), filename.getValue()));
+		Task task = system.getTask(pid.getValue());
+		system.addTaskFD(task, new FD(fd.getValue(), filename.getValue()));
 	}
 
 	public void handle_lttng_statedump_process_state(TraceReader reader, EventDefinition event) {
