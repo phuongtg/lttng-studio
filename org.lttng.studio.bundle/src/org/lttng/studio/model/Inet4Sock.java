@@ -14,6 +14,7 @@ public class Inet4Sock {
 	private int sport;
 	private int dport;
 	private boolean isSet;
+	// FIXME: Add create timestamp to make it uniq
 
 	public Inet4Sock(long sk) {
 		this.sk = sk;

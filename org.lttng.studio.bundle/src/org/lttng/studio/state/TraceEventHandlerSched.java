@@ -23,10 +23,11 @@ import org.lttng.studio.reader.TraceReader;
 public class TraceEventHandlerSched extends TraceEventHandlerBase {
 
 	/* Keep tmp info until corresponding sys_exit */
-	public enum EventType { SYS_EXECVE }
+	public enum EventType { SYS_EXECVE, SYS_CLONE }
 	public class EventData {
 		public EventType type;
 		public String cmd;
+		public long flags;
 	}
 
 	HashMap<Long, EventData> evHistory;
@@ -54,6 +55,7 @@ public class TraceEventHandlerSched extends TraceEventHandlerBase {
 		hooks.add(new TraceHook("sched_process_fork"));
 		hooks.add(new TraceHook()); // get all events to check sys_* events
 		hooks.add(new TraceHook("sys_execve"));
+		hooks.add(new TraceHook("sys_clone"));
 		hooks.add(new TraceHook("exit_syscall"));
 	}
 
@@ -102,6 +104,10 @@ public class TraceEventHandlerSched extends TraceEventHandlerBase {
 		task.setPpid(parent.getValue());
 		task.setTid(child.getValue());
 		system.putTask(task);
+
+		// copy any outstanding event data to handle sys_clone exit
+		EventData data = evHistory.get(parent.getValue());
+		evHistory.put(child.getValue(), data);
 	}
 
 	public void handle_all_event(TraceReader reader, EventDefinition event) {
@@ -111,6 +117,8 @@ public class TraceEventHandlerSched extends TraceEventHandlerBase {
 		int cpu = event.getCPU();
 		long tid = system.getCurrentTid(cpu);
 		Task curr = system.getTask(tid);
+		if (curr == null)
+			return;
 		curr.setExecutionMode(execution_mode.SYSCALL);
 	}
 
@@ -133,6 +141,20 @@ public class TraceEventHandlerSched extends TraceEventHandlerBase {
 		evHistory.put(tid, data);
 	}
 
+	public void handle_sys_clone(TraceReader reader, EventDefinition event) {
+		HashMap<String, Definition> def = event.getFields().getDefinitions();
+		int cpu = event.getCPU();
+		long tid = system.getCurrentTid(cpu);
+		if (tid == 0)
+			System.out.println("biz");
+		long flags = ((IntegerDefinition) def.get("_clone_flags")).getValue();
+		EventData data = new EventData();
+		data.flags = flags;
+		data.type = EventType.SYS_CLONE;
+		evHistory.put(tid, data); // tid of the clone caller
+		System.out.println("sys_clone entry " + tid);
+	}
+
 	public void handle_exit_syscall(TraceReader reader, EventDefinition event) {
 		HashMap<String, Definition> def = event.getFields().getDefinitions();
 		int cpu = event.getCPU();
@@ -152,6 +174,17 @@ public class TraceEventHandlerSched extends TraceEventHandlerBase {
 		case SYS_EXECVE:
 			if (ret == 0) {
 				task.setName(ev.cmd);
+			}
+			break;
+		case SYS_CLONE:
+			// handle parent
+			if (ret == 0) { 		// parent
+				System.out.println("sys_clone exit parent " + ret);
+			} else if (ret > 0) { 	// child
+				System.out.println("sys_clone exit child  " + ret);
+				// TODO: Copy FD from parent if required
+			} else { 				// failure
+				System.out.println("sys_clone exit failed " + ret);
 			}
 			break;
 		default:

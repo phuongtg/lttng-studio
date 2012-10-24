@@ -2,6 +2,7 @@ package org.lttng.studio.model;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Map;
 
 import org.lttng.studio.model.task.Task;
 import org.lttng.studio.reader.TraceReader;
@@ -17,6 +18,8 @@ public class SystemModel implements ITraceModel {
 	private Table<Long, Long, FD> fdsTable; // (pid, id, fd)
 	private Table<Long, Long, Inet4Sock> socksTable; // (pid, sk, sock)
 	private BiMap<Long, Long> sockFd; // (sk, fd)
+	private BiMap<Inet4Sock, Inet4Sock> socksComplement; // (sock1, sock2) where sock1.isComplement(sock2)
+	private Map<Inet4Sock, Long> socksPid; // (sock, pid) fast lookup
 	private long[] current;			// (cpu, tid)
 	private int numCpus;
 	private boolean isInitialized = false;
@@ -32,6 +35,8 @@ public class SystemModel implements ITraceModel {
 			fdsTable =  HashBasedTable.create();
 			socksTable = HashBasedTable.create();
 			sockFd = HashBiMap.create();
+			socksComplement = HashBiMap.create();
+			socksPid = new HashMap<Inet4Sock, Long>();
 			current = new long[numCpus];
 			// Swapper task is always present
 			Task swapper = new Task();
@@ -127,10 +132,12 @@ public class SystemModel implements ITraceModel {
 	 */
 	public void addInetSock(long pid, Inet4Sock sock) {
 		socksTable.put(pid, sock.getSk(), sock);
+		socksPid.put(sock, pid);
 	}
 
 	public void removeInetSock(long pid, long sk) {
-		socksTable.remove(pid, sk);
+		Inet4Sock sock = socksTable.remove(pid, sk);
+		socksPid.remove(sock);
 	}
 
 	public Inet4Sock getInetSock(long pid, long sk) {
@@ -139,6 +146,28 @@ public class SystemModel implements ITraceModel {
 
 	public Collection<Inet4Sock> getInetSocks() {
 		return socksTable.values();
+	}
+
+
+	public BiMap<Inet4Sock, Inet4Sock> getInetSockIndex() {
+		return socksComplement;
+	}
+
+	public long getInetSockPid(Inet4Sock sock) {
+		if (sock == null || !socksPid.containsKey(sock))
+			return -1;
+		return socksPid.get(sock);
+	}
+
+	public void indexInetSock(Inet4Sock sock) {
+		if (socksComplement.containsKey(sock) || socksComplement.containsValue(sock))
+			return;
+		for (Inet4Sock s: socksTable.values()) {
+			if (s.isComplement(sock)) {
+				socksComplement.put(s, sock);
+				break;
+			}
+		}
 	}
 
 	public void setInetSockFd(long sock, long fd) {

@@ -53,6 +53,7 @@ public class TraceEventHandlerSock extends TraceEventHandlerBase {
 		IntegerDefinition sport = (IntegerDefinition) def.get("_sport");
 		IntegerDefinition dport = (IntegerDefinition) def.get("_dport");
 		Task task = system.getTaskCpu(event.getCPU());
+		System.out.println(task);
 		Inet4Sock sock = system.getInetSock(task.getPid(), sk.getValue());
 		if (sock == null) {
 			System.out.println("Huston, we missed inet_sock_create " + sk.getValue());
@@ -62,8 +63,9 @@ public class TraceEventHandlerSock extends TraceEventHandlerBase {
 		}
 		sock.setInet((int)saddr.getValue(), (int)daddr.getValue(),
 				(int)sport.getValue(), (int)dport.getValue());
-		System.out.println(event);
-		System.out.println(sock);
+		system.indexInetSock(sock);
+		//System.out.println(event);
+		//System.out.println(sock);
 	}
 
 	public void handle_inet_connect(TraceReader reader, EventDefinition event) {
