@@ -5,6 +5,7 @@ import java.util.HashMap;
 import org.eclipse.linuxtools.ctf.core.event.EventDefinition;
 import org.eclipse.linuxtools.ctf.core.event.types.Definition;
 import org.eclipse.linuxtools.ctf.core.event.types.IntegerDefinition;
+import org.eclipse.linuxtools.tmf.ui.views.histogram.HistogramUtils;
 import org.lttng.studio.model.Inet4Sock;
 import org.lttng.studio.model.ModelRegistry;
 import org.lttng.studio.model.SystemModel;
@@ -53,7 +54,6 @@ public class TraceEventHandlerSock extends TraceEventHandlerBase {
 		IntegerDefinition sport = (IntegerDefinition) def.get("_sport");
 		IntegerDefinition dport = (IntegerDefinition) def.get("_dport");
 		Task task = system.getTaskCpu(event.getCPU());
-		System.out.println(task);
 		Inet4Sock sock = system.getInetSock(task, sk.getValue());
 		if (sock == null) {
 			System.out.println("Huston, we missed inet_sock_create " + sk.getValue());
@@ -76,19 +76,21 @@ public class TraceEventHandlerSock extends TraceEventHandlerBase {
 
 	public void handle_inet_sock_clone(TraceReader reader, EventDefinition event) {
 		HashMap<String, Definition> def = event.getFields().getDefinitions();
-		int cpu = event.getCPU();
-		Task current = system.getTaskCpu(cpu);
 		IntegerDefinition osk = (IntegerDefinition) def.get("_osk");
 		IntegerDefinition nsk = (IntegerDefinition) def.get("_nsk");
-		Inet4Sock oldSock = system.getInetSock(current, osk.getValue());
+		Inet4Sock oldSock = system.getInetSock(osk.getValue());
+		Task owner = system.getInetSockTaskOwner(oldSock);
 		if (oldSock == null) {
-			System.out.println("oldSock == null");
+			long time = TraceReader.clockTime(event);
+			String nano = HistogramUtils.nanosecondsToString(time);
+			System.err.println("WARNING: cloning unkown sock osk=" +
+					Long.toHexString(osk.getValue()) + " at " + nano);
+
 			return;
 		}
 		Inet4Sock newSock = cloner.deepClone(oldSock);
 		newSock.setSk(nsk.getValue());
-		system.addInetSock(current, newSock);
-		System.out.println(event);
+		system.addInetSock(owner, newSock);
 	}
 
 	public void handle_inet_sock_create(TraceReader reader, EventDefinition event) {
@@ -99,11 +101,13 @@ public class TraceEventHandlerSock extends TraceEventHandlerBase {
 		IntegerDefinition sk = (IntegerDefinition) def.get("_sk");
 		sock.setSk(sk.getValue());
 		system.addInetSock(current, sock);
-		System.out.println(event);
 	}
 
 	public void handle_inet_sock_delete(TraceReader reader, EventDefinition event) {
-		System.out.println(event);
+		// TODO: add state to Inet4Sock instead of delete
+		HashMap<String, Definition> def = event.getFields().getDefinitions();
+		IntegerDefinition sk = (IntegerDefinition) def.get("_sk");
+		system.removeInetSock(sk.getValue());
 	}
 
 }

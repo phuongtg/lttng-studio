@@ -239,4 +239,12 @@ public class TraceReader {
 		this.currentReader = currentReader;
 		return currentReader;
 	}
+
+	public static long clockTime(EventDefinition event) {
+		return (Long) event.getStreamInputReader()
+							.getParent()
+							.getTrace()
+							.getClock()
+							.getProperty("offset") + event.getTimestamp();
+	}
 }

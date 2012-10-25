@@ -17,7 +17,6 @@ public class SystemModel implements ITraceModel {
 	private HashMap<Long, Task> tasks; // (tid, task)
 	//private Table<Long, Long, FD> fdsTable; // (pid, id, fd)
 	private HashMap<Task, FDSet> taskFdSet;
-	private BiMap<Inet4Sock, FD> sockFd; // (sk, fd)
 	private BiMap<Inet4Sock, Inet4Sock> sockPeer; // (sock1, sock2) where sock1.isComplement(sock2)
 	private Multimap<Task, Inet4Sock> taskSock; // (sock, task) fast lookup
 	private long[] current;			// (cpu, tid)
@@ -33,7 +32,6 @@ public class SystemModel implements ITraceModel {
 			numCpus = reader.getNumCpus();
 			tasks = new HashMap<Long, Task>();
 			taskFdSet = new HashMap<Task, FDSet>();
-			sockFd = HashBiMap.create();
 			sockPeer = HashBiMap.create();
 			taskSock = HashMultimap.create();
 			current = new long[numCpus];
@@ -140,6 +138,10 @@ public class SystemModel implements ITraceModel {
 
 	}
 
+	public FDSet getFDSet(Task task) {
+		return taskFdSet.get(task);
+	}
+
 	/*
 	 * Socks management
 	 */
@@ -148,11 +150,31 @@ public class SystemModel implements ITraceModel {
 	}
 
 	public boolean removeInetSock(Task task, Inet4Sock sock) {
-		return taskSock.get(task).remove(sock);
+		return taskSock.remove(task, sock);
+	}
+
+	public boolean removeInetSock(Inet4Sock sock) {
+		Task owner = getInetSockTaskOwner(sock);
+		return taskSock.remove(owner, sock);
+	}
+
+	public boolean removeInetSock(long sk) {
+		Inet4Sock sock = getInetSock(sk);
+		Task owner = getInetSockTaskOwner(sock);
+		return taskSock.remove(owner, sock);
 	}
 
 	public Inet4Sock getInetSock(Task task, long sk) {
 		Collection<Inet4Sock> set = taskSock.get(task);
+		for (Inet4Sock sock: set) {
+			if (sock.getSk() == sk)
+				return sock;
+		}
+		return null;
+	}
+
+	public Inet4Sock getInetSock(long sk) {
+		Collection<Inet4Sock> set = taskSock.values();
 		for (Inet4Sock sock: set) {
 			if (sock.getSk() == sk)
 				return sock;
@@ -174,6 +196,12 @@ public class SystemModel implements ITraceModel {
 				return task;
 		}
 		return null;
+	}
+
+
+	public Task getInetSockTaskOwner(long sk) {
+		Inet4Sock sock = getInetSock(sk);
+		return getInetSockTaskOwner(sock);
 	}
 
 	public void matchPeer(Inet4Sock sock) {
@@ -205,10 +233,6 @@ public class SystemModel implements ITraceModel {
 			}
 		}
 		return str.toString();
-	}
-
-	public FDSet getFDSet(Task task) {
-		return taskFdSet.get(task);
 	}
 
 }

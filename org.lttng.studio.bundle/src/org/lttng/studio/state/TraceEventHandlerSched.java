@@ -7,6 +7,7 @@ import org.eclipse.linuxtools.ctf.core.event.types.ArrayDefinition;
 import org.eclipse.linuxtools.ctf.core.event.types.Definition;
 import org.eclipse.linuxtools.ctf.core.event.types.IntegerDefinition;
 import org.eclipse.linuxtools.ctf.core.event.types.StringDefinition;
+import org.eclipse.linuxtools.tmf.ui.views.histogram.HistogramUtils;
 import org.lttng.studio.model.CloneFlags;
 import org.lttng.studio.model.ModelRegistry;
 import org.lttng.studio.model.SystemModel;
@@ -146,14 +147,16 @@ public class TraceEventHandlerSched extends TraceEventHandlerBase {
 		HashMap<String, Definition> def = event.getFields().getDefinitions();
 		int cpu = event.getCPU();
 		long tid = system.getCurrentTid(cpu);
-		if (tid == 0)
-			System.out.println("biz");
+		if (tid == 0) {
+			long time = TraceReader.clockTime(event);
+			String nano = HistogramUtils.nanosecondsToString(time);
+			System.err.println("WARNING: swapper clone cpu=" + cpu + " at " + nano);
+		}
 		long flags = ((IntegerDefinition) def.get("_clone_flags")).getValue();
 		EventData data = new EventData();
 		data.flags = flags;
 		data.type = EventType.SYS_CLONE;
 		evHistory.put(tid, data); // tid of the clone caller
-		System.out.println("sys_clone entry " + tid);
 	}
 
 	public void handle_exit_syscall(TraceReader reader, EventDefinition event) {

@@ -43,14 +43,15 @@ public class TestInetSock {
 		reader.process();
 		SystemModel model = (SystemModel) ModelRegistry.getInstance().getModel(reader, SystemModel.class);
 		BiMap<Inet4Sock, Inet4Sock> socks = model.getInetSockIndex();
-		System.out.println(socks);
+		//System.out.println(socks);
 		assertEquals(1, socks.size());
 
 		Inet4Sock sock1 = socks.keySet().iterator().next();
 		Inet4Sock sock2 = socks.get(sock1);
 		Task owner1 = model.getInetSockTaskOwner(sock1);
 		Task owner2 = model.getInetSockTaskOwner(sock2);
-		System.out.println(owner1 + " " + owner2);
+		assertTrue(owner1.getName().endsWith("netcat"));
+		assertTrue(owner2.getName().endsWith("netcat"));
 	}
 
 }
