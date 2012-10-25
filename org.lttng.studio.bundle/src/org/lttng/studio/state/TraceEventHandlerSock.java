@@ -81,6 +81,10 @@ public class TraceEventHandlerSock extends TraceEventHandlerBase {
 		IntegerDefinition osk = (IntegerDefinition) def.get("_osk");
 		IntegerDefinition nsk = (IntegerDefinition) def.get("_nsk");
 		Inet4Sock oldSock = system.getInetSock(current, osk.getValue());
+		if (oldSock == null) {
+			System.out.println("oldSock == null");
+			return;
+		}
 		Inet4Sock newSock = cloner.deepClone(oldSock);
 		newSock.setSk(nsk.getValue());
 		system.addInetSock(current, newSock);

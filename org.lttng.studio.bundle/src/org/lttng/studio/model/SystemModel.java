@@ -9,6 +9,8 @@ import org.lttng.studio.reader.TraceReader;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 
 public class SystemModel implements ITraceModel {
 
@@ -17,7 +19,7 @@ public class SystemModel implements ITraceModel {
 	private HashMap<Task, FDSet> taskFdSet;
 	private BiMap<Inet4Sock, FD> sockFd; // (sk, fd)
 	private BiMap<Inet4Sock, Inet4Sock> sockPeer; // (sock1, sock2) where sock1.isComplement(sock2)
-	private BiMap<Inet4Sock, Task> sockTask; // (sock, task) fast lookup
+	private Multimap<Task, Inet4Sock> taskSock; // (sock, task) fast lookup
 	private long[] current;			// (cpu, tid)
 	private int numCpus;
 	private boolean isInitialized = false;
@@ -33,7 +35,7 @@ public class SystemModel implements ITraceModel {
 			taskFdSet = new HashMap<Task, FDSet>();
 			sockFd = HashBiMap.create();
 			sockPeer = HashBiMap.create();
-			sockTask = HashBiMap.create();
+			taskSock = HashMultimap.create();
 			current = new long[numCpus];
 			// Swapper task is always present
 			Task swapper = new Task();
@@ -141,20 +143,25 @@ public class SystemModel implements ITraceModel {
 	/*
 	 * Socks management
 	 */
-	public Task addInetSock(Task task, Inet4Sock sock) {
-		return sockTask.put(sock, task);
+	public boolean addInetSock(Task task, Inet4Sock sock) {
+		return taskSock.put(task, sock);
 	}
 
-	public Task removeInetSock(Task task, Inet4Sock sock) {
-		return sockTask.remove(sock);
+	public boolean removeInetSock(Task task, Inet4Sock sock) {
+		return taskSock.get(task).remove(sock);
 	}
 
 	public Inet4Sock getInetSock(Task task, long sk) {
-		return sockTask.inverse().get(new Inet4Sock(sk));
+		Collection<Inet4Sock> set = taskSock.get(task);
+		for (Inet4Sock sock: set) {
+			if (sock.getSk() == sk)
+				return sock;
+		}
+		return null;
 	}
 
 	public Collection<Inet4Sock> getInetSocks() {
-		return sockTask.keySet();
+		return taskSock.values();
 	}
 
 	public BiMap<Inet4Sock, Inet4Sock> getInetSockIndex() {
@@ -162,13 +169,17 @@ public class SystemModel implements ITraceModel {
 	}
 
 	public Task getInetSockTaskOwner(Inet4Sock sock) {
-		return sockTask.get(sock);
+		for (Task task: taskSock.keySet()) {
+			if (taskSock.get(task).contains(sock))
+				return task;
+		}
+		return null;
 	}
 
 	public void matchPeer(Inet4Sock sock) {
 		if (sockPeer.containsKey(sock) || sockPeer.containsValue(sock))
 			return;
-		for (Inet4Sock peer: sockTask.keySet()) {
+		for (Inet4Sock peer: taskSock.values()) {
 			if (peer.isComplement(sock)) {
 				sockPeer.put(peer, sock);
 				break;
