@@ -142,6 +142,10 @@ public class SystemModel implements ITraceModel {
 		return taskFdSet.get(task);
 	}
 
+	public void setTaskFDSet(Task task, FDSet childFDs) {
+		taskFdSet.put(task, childFDs);
+	}
+
 	/*
 	 * Socks management
 	 */

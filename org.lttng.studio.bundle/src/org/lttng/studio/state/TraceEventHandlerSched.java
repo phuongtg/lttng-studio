@@ -9,6 +9,7 @@ import org.eclipse.linuxtools.ctf.core.event.types.IntegerDefinition;
 import org.eclipse.linuxtools.ctf.core.event.types.StringDefinition;
 import org.eclipse.linuxtools.tmf.ui.views.histogram.HistogramUtils;
 import org.lttng.studio.model.CloneFlags;
+import org.lttng.studio.model.FDSet;
 import org.lttng.studio.model.ModelRegistry;
 import org.lttng.studio.model.SystemModel;
 import org.lttng.studio.model.task.Task;
@@ -17,6 +18,8 @@ import org.lttng.studio.model.task.Task.process_status;
 import org.lttng.studio.reader.TraceEventHandlerBase;
 import org.lttng.studio.reader.TraceHook;
 import org.lttng.studio.reader.TraceReader;
+
+import com.rits.cloning.Cloner;
 
 /*
  * Provides the current task running on a CPU according to scheduling events
@@ -183,7 +186,12 @@ public class TraceEventHandlerSched extends TraceEventHandlerBase {
 		case SYS_CLONE:
 			if (ret > 0) { // child
 				if (!CloneFlags.isFlagSet(ev.flags, CloneFlags.CLONE_FILES)) {
-					//copyFileDescriptors();
+					// detach file descriptors from parent
+					Task parent = system.getTask(task.getPpid());
+					FDSet parentFDs = system.getFDSet(parent);
+					Cloner cloner = new Cloner();
+					FDSet childFDs = cloner.deepClone(parentFDs);
+					system.setTaskFDSet(task, childFDs);
 				}
 				if (!CloneFlags.isFlagSet(ev.flags, CloneFlags.CLONE_THREAD)) {
 					// Promote a thread to process
