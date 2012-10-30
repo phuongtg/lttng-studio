@@ -10,8 +10,8 @@ import org.junit.Before;
 
 public class ImageOutput {
 
-	static int imgWidth = 800;
-	static int imgHeight = 200;
+	static int imgWidth = 1200;
+	static int imgHeight = 400;
 	static int border = 40;
 	Image img;
 	GC gc;

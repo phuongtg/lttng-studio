@@ -1,10 +1,10 @@
 package org.lttng.studio.model;
 
+import org.lttng.studio.net.ui.Interval;
+
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
-
-
 
 public class Inet4Sock {
 
@@ -14,6 +14,8 @@ public class Inet4Sock {
 	private int sport;
 	private int dport;
 	private boolean isSet;
+	private long startTime;
+	private long endTime;
 	// FIXME: Add create timestamp to make it uniq
 
 	public Inet4Sock(long sk) {
@@ -94,6 +96,21 @@ public class Inet4Sock {
 				(byte) (ip << 24)
 		};
 		return String.format("%d.%d.%d.%d", a[0], a[1], a[2], a[3]);
+	}
+	public long getStartTime() {
+		return startTime;
+	}
+	public void setStartTime(long startTime) {
+		this.startTime = startTime;
+	}
+	public long getEndTime() {
+		return endTime;
+	}
+	public void setEndTime(long endTime) {
+		this.endTime = endTime;
+	}
+	public Interval getInterval() {
+		return new Interval(startTime, endTime);
 	}
 
 }

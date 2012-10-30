@@ -12,9 +12,14 @@ public class MessagePainter {
 
 	HashMap<Actor, ActorLine> actorLineMap;
 	Interval window;
+	int leftBorder = 400;
 	static Color black = new Color(null, 0, 0, 0);
 	static Color red = new Color(null, 255, 0, 0);
 	static Color blue = new Color(null, 0, 0, 255);
+
+	public MessagePainter() {
+		this(new Interval());
+	}
 
 	public MessagePainter(Interval window) {
 		actorLineMap = new HashMap<Actor, ActorLine>();
@@ -25,9 +30,10 @@ public class MessagePainter {
 		Rectangle bounds = img.getBounds();
 		ActorLine senderLine = actorLineMap.get(msg.sender);
 		ActorLine receiverLine = actorLineMap.get(msg.receiver);
-		int fromX = (int) (bounds.width * (msg.sent - window.getStart()) / window.getDuration());
+		int width = bounds.width - leftBorder;
+		int fromX = (int) (width * (msg.sent - window.getStart()) / window.getDuration()) + leftBorder;
 		int fromY = senderLine.getPos();
-		int destX = (int) (bounds.width * (msg.recv - window.getStart()) / window.getDuration());
+		int destX = (int) (width * (msg.recv - window.getStart()) / window.getDuration()) + leftBorder;
 		int destY = receiverLine.getPos();
 
 		gc.setForeground(black);
@@ -43,8 +49,10 @@ public class MessagePainter {
 		if (actors.length > 1)
 			spacing = (height - (border * 2)) / (actors.length - 1);
 		for (Actor actor : actors) {
-			ActorLine line = new ActorLine(window, window);
+			ActorLine line = new ActorLine(actor.getInterval(), window);
 			line.setPos(spacing * i + border);
+			line.setLeftBorder(leftBorder);
+			line.setActor(actor);
 			actorLineMap.put(actor, line);
 			i++;
 		}

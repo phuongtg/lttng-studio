@@ -23,4 +23,9 @@ public class Message {
 		}
 		return new Interval(min, max);
 	}
+
+	@Override
+	public String toString() {
+		return String.format("{sender=%s, receiver=%s, sent=%d, recv=%d}", sender, receiver, sent, recv);
+	}
 }

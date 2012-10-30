@@ -1,5 +1,6 @@
 package org.lttng.studio.state;
 
+import java.util.Collection;
 import java.util.HashMap;
 
 import org.eclipse.linuxtools.ctf.core.event.EventDefinition;
@@ -10,6 +11,7 @@ import org.lttng.studio.model.Inet4Sock;
 import org.lttng.studio.model.ModelRegistry;
 import org.lttng.studio.model.SystemModel;
 import org.lttng.studio.model.task.Task;
+import org.lttng.studio.reader.TimeKeeper;
 import org.lttng.studio.reader.TraceEventHandlerBase;
 import org.lttng.studio.reader.TraceHook;
 import org.lttng.studio.reader.TraceReader;
@@ -43,7 +45,11 @@ public class TraceEventHandlerSock extends TraceEventHandlerBase {
 
 	@Override
 	public void handleComplete(TraceReader reader) {
-
+		Collection<Inet4Sock> socks = system.getInetSocks();
+		TimeKeeper time = TimeKeeper.getInstance();
+		for (Inet4Sock sock: socks) {
+			sock.setEndTime(time.getCurrentTime());
+		}
 	}
 
 	public void defineInet4Sock(EventDefinition event) {
@@ -90,6 +96,7 @@ public class TraceEventHandlerSock extends TraceEventHandlerBase {
 		}
 		Inet4Sock newSock = cloner.deepClone(oldSock);
 		newSock.setSk(nsk.getValue());
+		newSock.setStartTime(event.getTimestamp());
 		system.addInetSock(owner, newSock);
 	}
 
@@ -100,6 +107,7 @@ public class TraceEventHandlerSock extends TraceEventHandlerBase {
 		Inet4Sock sock = new Inet4Sock();
 		IntegerDefinition sk = (IntegerDefinition) def.get("_sk");
 		sock.setSk(sk.getValue());
+		sock.setStartTime(event.getTimestamp());
 		system.addInetSock(current, sock);
 	}
 
